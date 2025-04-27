@@ -1,0 +1,13 @@
+menu "DATABUS"
+    config DATABUS_WIFI_CHANNEL
+        int "Wifi channel"
+        default 1
+        help
+            WIFI channel to use for databus
+
+    config DATABUS_MESSAGE_PREFIX
+        string "ESPNOW message prefix for databus"
+        default "WB2025"
+        help
+            Prefix before every espnow message from and to databus
+endmenu
