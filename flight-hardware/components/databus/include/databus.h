@@ -10,6 +10,7 @@ enum databus_message_type {
 };
 
 struct databus_message {
+    time_t send_time;
     enum databus_message_type type;
     union {
         struct databus_message_data {
@@ -29,8 +30,8 @@ esp_err_t databus_init(void);
 
 esp_err_t databus_send(struct databus_message);
 esp_err_t databus_send_timesync(time_t time);
-esp_err_t databus_send_data(char *msg_str);
-esp_err_t databus_send_log(char *msg_str);
+esp_err_t databus_send_data(time_t send_time, char *msg_str);
+esp_err_t databus_send_log(time_t send_time, char *msg_str);
 
 esp_err_t databus_register_recv_callback(enum databus_message_type type, void (*callback)(struct databus_message *));
 esp_err_t databus_parse_message(char *msg_buf, struct databus_message *out_msg);

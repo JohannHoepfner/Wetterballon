@@ -138,18 +138,18 @@ esp_err_t databus_send(struct databus_message msg) {
 }
 
 esp_err_t databus_send_timesync(time_t time) {
-    struct databus_message msg = {databus_message_type_timesync, {.time = {time}}};
+    struct databus_message msg = {.send_time = time, .type = databus_message_type_timesync, {.time = {time}}};
     return databus_send(msg);
 }
 
-esp_err_t databus_send_log(char *msg_str) {
-    struct databus_message msg = {.type = databus_message_type_log};
+esp_err_t databus_send_log(time_t time, char *msg_str) {
+    struct databus_message msg = {.send_time = time, .type = databus_message_type_log};
     strncpy(msg.log.message, msg_str, sizeof(msg.log.message));
     return databus_send(msg);
 }
 
-esp_err_t databus_send_data(char *msg_str) {
-    struct databus_message msg = {.type = databus_message_type_data};
+esp_err_t databus_send_data(time_t time, char *msg_str) {
+    struct databus_message msg = {.send_time = time, .type = databus_message_type_data};
     strncpy(msg.data.message, msg_str, sizeof(msg.data.message));
     return databus_send(msg);
 }
