@@ -1,0 +1,10 @@
+dependencies:
+  idf: ">=5.4.0"
+  espressif/esp_modem:
+    version: "^1.0.0"
+  espressif/led_strip:
+    version: "^2.4.1"
+  johannh/databus:
+    override_path: "../../components/databus/"
+  johannh/sd_card:
+    override_path: "../../components/sd_card/"
