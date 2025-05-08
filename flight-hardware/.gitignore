@@ -1,1 +1,8 @@
+.cache/
+build/
+build_*_*/
+sdkconfig
+sdkconfig.old
+managed_components/
+CMakeFiles/
 .direnv/
