@@ -35,16 +35,28 @@ dependencies:
     dependencies:
     - name: idf
       version: '>=5.4.0'
+    - name: johannh/databus
+      override_path: ../databus/
     source:
       path: /home/johann/wetterballon/flight-hardware/components/sd_card
       type: local
     version: 1.0.0
+  johannh/status_led:
+    dependencies:
+    - name: idf
+      version: '>=5.4.0'
+    - name: espressif/led_strip
+      version: ^2.4.1
+    source:
+      path: /home/johann/wetterballon/flight-hardware/components/status_led
+      type: local
+    version: 1.0.0
 direct_dependencies:
 - espressif/esp_modem
-- espressif/led_strip
 - idf
 - johannh/databus
 - johannh/sd_card
-manifest_hash: 8a2210993894ed23361ffb8e814de047e7ef50e54fabc3c91674e3c0568ed5f9
+- johannh/status_led
+manifest_hash: 8e546f034f5712b0af0211c8935169a418933200769b5e0e7aca1ff8d938659e
 target: esp32c6
 version: 2.0.0

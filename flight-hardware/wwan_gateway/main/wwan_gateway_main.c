@@ -5,7 +5,7 @@
 #include "sdkconfig.h"
 #include "stdlib.h"
 #include "wwan_gateway_modem.h"
-#include "wwan_gateway_status_led.h"
+#include "status_led.h"
 
 #include "esp_http_client.h"
 #include "esp_log.h"
