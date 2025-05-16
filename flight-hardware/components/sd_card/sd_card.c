@@ -68,3 +68,37 @@ esp_err_t sdcard_deinit() {
     ESP_LOGI(TAG, "Card unmounted");
     return ESP_OK;
 }
+
+const char *data_file_path = CONFIG_SD_CARD_MOUNT_POINT "/data";
+esp_err_t save_databus_message(struct databus_message *message) {
+    char *buf = malloc(sizeof(struct databus_message));
+    databus_message_to_bytes(message, buf);
+
+    FILE *data_file = fopen(data_file_path, "a");
+    if (data_file == NULL) {
+        ESP_LOGE(TAG, "Failed to open file for writing");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    fwrite(buf, sizeof(struct databus_message), 1, data_file);
+    fclose(data_file);
+    return ESP_OK;
+}
+
+ssize_t read_databus_messages(struct databus_message *out_messages, size_t start, size_t count) {
+    char *buf = malloc(sizeof(struct databus_message) * count);
+    FILE *data_file = fopen(data_file_path, "r");
+    if (data_file == NULL) {
+        ESP_LOGE(TAG, "Failed to open file for reading");
+        return -1;
+    }
+    fseek(data_file, start * sizeof(struct databus_message), SEEK_SET);
+    int num = fread(buf, sizeof(struct databus_message), count, data_file);
+    fclose(data_file);
+
+    for (int n = 0; n < num; ++n) {
+        databus_message_from_bytes(buf + n * sizeof(struct databus_message), out_messages + n);
+    }
+
+    return num;
+}
