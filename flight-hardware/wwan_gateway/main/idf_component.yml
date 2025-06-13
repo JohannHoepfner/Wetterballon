@@ -1,7 +1,7 @@
 dependencies:
   idf: ">=5.4.0"
-  espressif/esp_modem:
-    version: "^1.0.0"
+  johannh/modem:
+    override_path: "../../components/modem/"
   johannh/databus:
     override_path: "../../components/databus/"
   johannh/sd_card:

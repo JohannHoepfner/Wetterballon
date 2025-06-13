@@ -15,7 +15,6 @@
         default = esp-dev.devShells.${system}.esp-idf-full;
         esp-idf-full = esp-dev.devShells.${system}.esp-idf-full;
         esp32c3-idf = esp-dev.devShells.${system}.esp32c3-idf;
-        esp32s3-idf = esp-dev.devShells.${system}.esp32s3-idf;
         esp32c6-idf = esp-dev.devShells.${system}.esp32c6-idf;
       };
     });

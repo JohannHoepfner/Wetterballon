@@ -1,4 +1,4 @@
 idf_component_register(
-    SRCS "status_led.c"
+    SRCS "modem.c"
     INCLUDE_DIRS "include"
 )

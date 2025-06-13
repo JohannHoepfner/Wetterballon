@@ -10,9 +10,9 @@
 #include "esp_wifi.h"
 #include "include/databus_message.h"
 
-_Static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX) <= ESP_NOW_MAX_DATA_LEN,
-               "sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)"
-               "overflows ESP_NOW_MAX_LEN");
+static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX) <= ESP_NOW_MAX_DATA_LEN,
+              "sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)"
+              "overflows ESP_NOW_MAX_LEN");
 
 static const char *TAG = "DATABUS";
 
@@ -44,11 +44,11 @@ int num_data_callbacks = 0;
 
 esp_err_t databus_register_recv_callback(uint64_t message_type, void (*callback)(struct databus_message *)) {
     switch (message_type) {
-    case databus_message_type_data:
+    case DATABUS_MSG_TYPE_DAT:
         data_callbacks[num_data_callbacks] = callback;
         num_data_callbacks++;
         break;
-    case databus_message_type_log:
+    case DATABUS_MSG_TYPE_LOG:
         if (num_log_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
             return ESP_ERR_INVALID_STATE;
         }
@@ -83,7 +83,8 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
     }
 
     struct databus_message msg;
-    int err = databus_message_from_bytes(msg_buf + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX), &msg);
+    int err =
+        databus_message_from_recv((struct databus_message *)(msg_buf + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)), &msg);
 
     if (err != 0) {
         ESP_LOGE(TAG, "Received invalid espnow message");
@@ -91,11 +92,11 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
     }
 
     switch (msg.type) {
-    case databus_message_type_timesync:
-        ESP_LOGI(TAG, "Received timesync message for %lld", (unsigned long long)msg.time.time);
-        set_time(msg.time.time);
+    case DATABUS_MSG_TYPE_TMS:
+        ESP_LOGI(TAG, "Received timesync message for %lld", (unsigned long long)msg.timesync.time);
+        set_time(msg.timesync.time);
         break;
-    case databus_message_type_data:
+    case DATABUS_MSG_TYPE_DAT:
         ESP_LOGI(TAG, "Received data message: \"%.*s\"", sizeof(msg.data.message), msg.data.message);
         for (int i = 0; i < num_data_callbacks; ++i) {
             if (data_callbacks[i] == NULL)
@@ -103,7 +104,7 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
             data_callbacks[i](&msg);
         }
         break;
-    case databus_message_type_log:
+    case DATABUS_MSG_TYPE_LOG:
         ESP_LOGI(TAG, "Received log message: \"%.*s\"", sizeof(msg.log.message), msg.log.message);
         for (int i = 0; i < num_log_callbacks; ++i) {
             if (log_callbacks[i] == NULL)
@@ -139,26 +140,24 @@ esp_err_t databus_init() {
 
 esp_err_t databus_send(struct databus_message *msg) {
     char msg_buf[sizeof(CONFIG_DATABUS_MESSAGE_PREFIX) + sizeof(struct databus_message)];
+    databus_message_to_send(msg, (struct databus_message *)(msg_buf + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)));
     memcpy(msg_buf, CONFIG_DATABUS_MESSAGE_PREFIX, sizeof(CONFIG_DATABUS_MESSAGE_PREFIX));
-
-    databus_message_to_bytes(msg, msg_buf + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX));
-
     return esp_now_send(broadcast_mac, (const uint8_t *)msg_buf, sizeof(msg_buf));
 }
 
 esp_err_t databus_send_timesync(time_t time) {
-    struct databus_message msg = {.send_time = time, .type = databus_message_type_timesync, {.time = {time}}};
+    struct databus_message msg = {.send_time = time, .type = DATABUS_MSG_TYPE_TMS, {.timesync = {time}}};
     return databus_send(&msg);
 }
 
 esp_err_t databus_send_log(time_t time, char *msg_str) {
-    struct databus_message msg = {.send_time = time, .type = databus_message_type_log};
+    struct databus_message msg = {.send_time = time, .type = DATABUS_MSG_TYPE_LOG};
     strncpy((char *)msg.log.message, msg_str, sizeof(msg.log.message));
     return databus_send(&msg);
 }
 
 esp_err_t databus_send_data(time_t time, char *msg_str) {
-    struct databus_message msg = {.send_time = time, .type = databus_message_type_data};
+    struct databus_message msg = {.send_time = time, .type = DATABUS_MSG_TYPE_DAT};
     strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
     return databus_send(&msg);
 }

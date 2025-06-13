@@ -1,3 +1,4 @@
+#include "databus_message.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -9,8 +10,8 @@
 
 static const char *TAG = "espnow_listener";
 
-void espnow_recv_callback(struct databus_message *msg) { ESP_LOGI(TAG, "Callback %s", msg->log.message); }
-void espnow_recv_callback2(struct databus_message *msg) { ESP_LOGI(TAG, "Callback 2 %s", msg->log.message); }
+void espnow_recv_callback_log(struct databus_message *msg) { ESP_LOGI(TAG, "Callback %s", msg->log.message); }
+void espnow_recv_callback_dat(struct databus_message *msg) { ESP_LOGI(TAG, "Callback 2 %s", msg->data.message); }
 
 void app_main(void) {
     esp_err_t ret = nvs_flash_init();
@@ -23,8 +24,8 @@ void app_main(void) {
     databus_wifi_init();
     databus_init();
 
-    databus_register_recv_callback(databus_message_type_log, espnow_recv_callback);
-    databus_register_recv_callback(databus_message_type_log, espnow_recv_callback2);
+    databus_register_recv_callback(DATABUS_MSG_TYPE_LOG, espnow_recv_callback_log);
+    databus_register_recv_callback(DATABUS_MSG_TYPE_DAT, espnow_recv_callback_dat);
 
     while (true) {
         ESP_LOGI(TAG, "waiting");

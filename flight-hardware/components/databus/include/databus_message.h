@@ -5,27 +5,25 @@
 #include <stdint.h>
 #include <time.h>
 
-enum databus_message_type {
-    databus_message_type_data = 0,
-    databus_message_type_log = 1,
-    databus_message_type_timesync = 2,
-};
+#define DATABUS_MSG_TYPE_DAT 0
+#define DATABUS_MSG_TYPE_LOG 1
+#define DATABUS_MSG_TYPE_TMS 2
 
-struct databus_message {
+struct __attribute__((__packed__)) databus_message {
     uint64_t send_time;
-    enum databus_message_type type;
+    uint16_t type;
     union {
         struct {
-            char message[200];
+            char message[220];
         } data;
         struct {
-            char message[200];
+            char message[220];
         } log;
         struct {
             time_t time;
-        } time;
+        } timesync;
     };
 };
 
-int databus_message_to_bytes(struct databus_message *message, char buf[sizeof(struct databus_message)]);
-int databus_message_from_bytes(char buf[sizeof(struct databus_message)], struct databus_message *message);
+int databus_message_to_send(struct databus_message *in_message, struct databus_message *out_message);
+int databus_message_from_recv(struct databus_message *in_message, struct databus_message *out_message);
