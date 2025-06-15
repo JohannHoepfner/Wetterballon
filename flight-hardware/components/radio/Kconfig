@@ -1,0 +1,17 @@
+menu "Sim7600 modem config"
+    config RADIO_AMP_PWK
+        int "Pin of the Power Key for Amplifier"
+        default 15
+    config RADIO_SDA_PIN
+        int "Pin of the si5351 for sda"
+        default 6
+    config RADIO_SCL_PIN
+        int "Pin of the si5351 for sda"
+        default 7
+    config RADIO_FREQ_BASE
+        int "Base frequency for sending"
+        default 28090000
+    config RADIO_FREQ_SHIFT
+        int "Shift frequency for sending"
+        default 170
+endmenu
