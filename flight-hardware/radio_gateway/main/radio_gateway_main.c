@@ -1,5 +1,3 @@
-#include "freertos/idf_additions.h"
-#include "freertos/projdefs.h"
 #include "radio.h"
 
 #include <freertos/FreeRTOS.h>
@@ -16,7 +14,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(radio_init());
 
     while (true) {
-        radio_send_data(seq, strlen(seq));
+        radio_send_msg(seq, strlen(seq));
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
