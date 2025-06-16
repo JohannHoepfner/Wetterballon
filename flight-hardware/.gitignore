@@ -6,3 +6,5 @@ sdkconfig.old
 managed_components/
 CMakeFiles/
 .direnv/
+dependencies.lock
+compile_commands.json
