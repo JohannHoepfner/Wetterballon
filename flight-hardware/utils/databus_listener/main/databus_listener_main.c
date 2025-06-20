@@ -6,12 +6,11 @@
 #include "nvs_flash.h"
 
 #include "databus.h"
-#include <stdio.h>
 
 static const char *TAG = "espnow_listener";
 
-void espnow_recv_callback_log(struct databus_message *msg) { ESP_LOGI(TAG, "Callback %s", msg->log.message); }
-void espnow_recv_callback_dat(struct databus_message *msg) { ESP_LOGI(TAG, "Callback 2 %s", msg->data.message); }
+void espnow_recv_callback_log(struct databus_message *msg) { ESP_LOGI(TAG, "LOG %s", msg->log.message); }
+void espnow_recv_callback_dat(struct databus_message *msg) { ESP_LOGI(TAG, "DAT %s", msg->data.message); }
 
 void app_main(void) {
     esp_err_t ret = nvs_flash_init();
@@ -28,22 +27,20 @@ void app_main(void) {
     databus_register_recv_callback(DATABUS_MSG_TYPE_DAT, espnow_recv_callback_dat);
 
     while (true) {
-        ESP_LOGI(TAG, "waiting");
         vTaskDelay(500 / portTICK_PERIOD_MS);
 
         time_t now;
         time(&now);
-        ESP_LOGI(TAG, "time %lld", (unsigned long long)now);
 
-        char buf[128];
-        snprintf(buf, sizeof(buf), "here is data !!!! %lld", (unsigned long long)now);
+        // char buf[128];
+        // snprintf(buf, sizeof(buf), "here is data !!!! %lld", (unsigned long long)now);
 
-        time_t now_time;
-        time(&now_time);
-        esp_err_t err = databus_send_data(now_time, buf);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "databus_send_data failed with %d %s", err, esp_err_to_name(err));
-            return;
-        }
+        // time_t now_time;
+        // time(&now_time);
+        // esp_err_t err = databus_send_data(now_time, buf);
+        // if (err != ESP_OK) {
+        //     ESP_LOGE(TAG, "databus_send_data failed with %d %s", err, esp_err_to_name(err));
+        //     return;
+        // }
     }
 }
