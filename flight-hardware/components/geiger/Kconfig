@@ -1,0 +1,6 @@
+menu "GEIGER"
+    config GEIGER_PULSE_PIN
+        int "Geiger counter pulse pin number"
+        default 15
+        range 0 56
+endmenu
