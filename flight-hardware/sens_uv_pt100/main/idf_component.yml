@@ -2,3 +2,5 @@ dependencies:
   idf: '>=5.4.0'
   johannh/databus:
     override_path: "../../components/databus/"
+  johannh/uv_pt100:
+    override_path: "../../components/uv_pt100/"
