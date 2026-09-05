@@ -41,4 +41,3 @@ components/
 | hi | NEO-m8 | Höhe | m (?) | - |
 ||||||
 | ? | BNO055 | ? | ? | ? |
-

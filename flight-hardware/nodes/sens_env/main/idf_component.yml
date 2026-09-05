@@ -12,3 +12,5 @@ dependencies:
     override_path: "../../../components/sensor/pt1000/"
   johannh/sd_card:
     override_path: "../../../components/store/sd_card/"
+  johannh/log_store:
+    override_path: "../../../components/store/log_store/"
