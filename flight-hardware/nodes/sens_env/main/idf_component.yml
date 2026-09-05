@@ -2,8 +2,6 @@ dependencies:
   idf: ">=5.4.0"
   johannh/databus:
     override_path: "../../../components/intracom/databus/"
-  johannh/sms:
-    override_path: "../../../components/intercom/sms/"
   johannh/mock:
     override_path: "../../../components/sensor/mock/"
   johannh/geiger:

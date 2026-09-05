@@ -6,6 +6,6 @@
 
 esp_err_t geiger_init(Sensor *self);
 char *geiger_read(Sensor *self);
-char *geiger_format(double value);
+char *geiger_format(unsigned long long value);
 
 extern Sensor geiger;

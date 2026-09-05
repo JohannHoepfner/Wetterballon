@@ -1,10 +1,11 @@
-#include "sms.h"
 #include "databus.h"
 #include "sd_card.h"
 #include "mock.h"
 #include "geiger.h"
 
 #include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+#include <freertos/task.h>
 
 #include <nvs_flash.h>
 #include <esp_event.h>
@@ -12,10 +13,48 @@
 #include <esp_netif.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
-static const char *TAG = "sms_gateway";
+static const char *TAG = "sens_env";
 
-time_t now;
+typedef struct {
+    Sensor *sensor;
+    TickType_t read_interval;
+} SensorSchedule;
+
+typedef struct {
+    const SensorSchedule *schedule;
+    Intracom *intracom;
+    Store *store;
+    SemaphoreHandle_t output_mutex;
+} SensorTaskContext;
+
+static void sensor_task(void *arg)
+{
+    const SensorTaskContext *context = (SensorTaskContext *)arg;
+
+    while (true) {
+        char *sensor_value = context->schedule->sensor->read(context->schedule->sensor);
+        time_t now = time(NULL);
+
+        xSemaphoreTake(context->output_mutex, portMAX_DELAY);
+
+        esp_err_t err = context->store->save(now, sensor_value);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to save data to SD card: %s (0x%x)",
+                     esp_err_to_name(err), err);
+        } else {
+            err = context->intracom->send_data(now, sensor_value);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to send data via intracom: %s (0x%x)",
+                         esp_err_to_name(err), err);
+            }
+        }
+
+        xSemaphoreGive(context->output_mutex);
+        vTaskDelay(context->schedule->read_interval);
+    }
+}
 
 void app_main(void)
 {
@@ -27,59 +66,49 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    
-    // char *seq = "hello world";
-    
-    // Intercom *intercom_sms = &sms;
+        
     Intracom *intracom_databus = &databus;
     Store *store_sd_card = &sd_card;
 
     Sensor *sensor_mock = &mock;
     Sensor *sensor_geiger = &geiger;
 
-    // ESP_ERROR_CHECK(intercom_sms->init());
     ESP_ERROR_CHECK(intracom_databus->init());
     ESP_ERROR_CHECK(store_sd_card->init());
     ESP_ERROR_CHECK(sensor_mock->init(sensor_mock));
     ESP_ERROR_CHECK(sensor_geiger->init(sensor_geiger));
 
-    // List of sensors to read from
-    Sensor *sensors[] = {sensor_mock, sensor_geiger};
+    static SensorSchedule schedules[] = {
+        {NULL, pdMS_TO_TICKS(1000)},
+        {NULL, pdMS_TO_TICKS(500)},
+    };
+    static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 
-    while (true) { // TODO: add a way to exit this loop
-        esp_err_t err;
+    schedules[0].sensor = sensor_mock;
+    schedules[1].sensor = sensor_geiger;
 
-        // esp_err_t err = intercom_sms->send(seq, strlen(seq));
-        // if (err != ESP_OK) {
-        //     ESP_LOGE(TAG, "Failed to send message: %s (0x%x)",
-        //              esp_err_to_name(err), err);
-        //     continue;
-        // }
-
-        // Read sensor data of every sensor and save/send it
-        for (size_t i = 0; i < sizeof(sensors) / sizeof(sensors[0]); ++i) {
-            Sensor *sensor = sensors[i];
-            char *sensor_value = sensor->read(sensor);
-
-            // Save data to SD Card
-            err = store_sd_card->save(now, sensor_value);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to save data to SD card: %s (0x%x)",
-                         esp_err_to_name(err), err);
-                continue;
-            }
-
-            // Send data via intracom
-            err = intracom_databus->send_data(now, sensor_value);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to send data via intracom: %s (0x%x)",
-                         esp_err_to_name(err), err);
-                continue;
-            }
-        }
-        vTaskDelay(pdMS_TO_TICKS(600));
+    SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();
+    if (output_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create sensor output mutex");
+        return;
     }
 
-    // ESP_ERROR_CHECK(intercom_sms->deinit());
-    ESP_ERROR_CHECK(store_sd_card->deinit());
+    for (size_t i = 0; i < sizeof(schedules) / sizeof(schedules[0]); ++i) {
+        task_contexts[i] = (SensorTaskContext){
+            .schedule = &schedules[i],
+            .intracom = intracom_databus,
+            .store = store_sd_card,
+            .output_mutex = output_mutex,
+        };
+        BaseType_t task_created = xTaskCreate(
+            sensor_task,
+            "sensor_read",
+            4096,
+            &task_contexts[i],
+            5,
+            NULL);
+        if (task_created != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create task for sensor %zu", i);
+        }
+    }
 }

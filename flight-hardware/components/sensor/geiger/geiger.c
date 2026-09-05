@@ -13,11 +13,11 @@
 static const char *TAG = "sensor/geiger";
 
 static volatile uint64_t pulse_count = 0;
-static int64_t last_time;
-static double frequency;
-static char formatted_frequency[32];
+static char formatted_pulse_count[32];
 
-static void IRAM_ATTR gpio_isr_handler(void *arg) { pulse_count++; }
+static void IRAM_ATTR gpio_isr_handler(void *arg) {
+    pulse_count++;
+}
 
 Sensor geiger = {
     .init = geiger_init,
@@ -46,9 +46,7 @@ esp_err_t geiger_init(Sensor *self) {
         return err;
     }
 
-    last_time = esp_timer_get_time();
-
-    gpio_isr_handler_add(CONFIG_GEIGER_PULSE_PIN, gpio_isr_handler, NULL);
+    err = gpio_isr_handler_add(CONFIG_GEIGER_PULSE_PIN, gpio_isr_handler, NULL);
     if (err) {
         return err;
     }
@@ -61,18 +59,12 @@ esp_err_t geiger_init(Sensor *self) {
 char *geiger_read(Sensor *self) {
     (void)self;
 
-    int64_t time = esp_timer_get_time();
-    double dt = time - last_time;
-    last_time = time;
-    frequency = pulse_count / dt;
-    pulse_count = 0;
+    ESP_LOGI(TAG, "Geiger sensor read: pulse_count=%llu", (unsigned long long)pulse_count);
 
-    ESP_LOGI(TAG, "Geiger sensor read: frequency=%.2f Hz", frequency);
-
-    return geiger_format(frequency);
+    return geiger_format((unsigned long long)pulse_count);
 }
 
-char *geiger_format(double value) {
-    snprintf(formatted_frequency, sizeof(formatted_frequency), "s=%.2f", value);
-    return formatted_frequency;
+char *geiger_format(unsigned long long value) {
+    snprintf(formatted_pulse_count, sizeof(formatted_pulse_count), "s=%llu", (unsigned long long)value);
+    return formatted_pulse_count;
 }
