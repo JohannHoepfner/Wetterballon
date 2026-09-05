@@ -22,6 +22,8 @@ components/
 ```
 ## Übersicht Messungen
 
+*Hinweis: Ein Adapter sollte nicht mehrfach verwendet werden, da sonst in den Daten anhand der Kennung nicht unterscheidbar ist, von welchem Adapter der Messwert stammt.*
+
 | Kennung | Sensor | Messgröße | Einheit | Adapter |
 |---------|--------|-----------|---------|---------|
 | m | - | - | - | mock |
