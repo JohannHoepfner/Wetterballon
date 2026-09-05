@@ -1,0 +1,6 @@
+description: mock readout
+version: "1.0.0"
+license: "MIT"
+dependencies:
+  idf:
+    version: ">=5.4.0"

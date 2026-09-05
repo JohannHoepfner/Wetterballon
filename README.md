@@ -4,16 +4,19 @@
 
 Die Architektur basiert auf der Hexagonal Architecture. Dabei wird die zentrale Logik von externen Systemen, hier der Hardware von Sensoren und Funk, getrennt.
 
-Die Firmware enthält folgende Schichten:
+- **Ports** sind die generischen Schnittstellen, die die von der Anwendung benötigten Funktionen beschreiben.
+- **Adapter** sind die hardwarespezifischen / emulierten Implementierungen.
 
-- **Domain** (`components/domain`) enthält portierbare Messkonzepte und Berechnungen, wie beispielsweise die PT100-Umwandlung.
-- **Ports** (`components/ports`) enthält die generischen Schnittstellen, die die von der Anwendung benötigten Funktionen beschreiben.
-- **App** (`components/app`) enthält die Arbeitsabläufe.
-- **Adapter** (`components/adapter`) enthält die hardwarespezifischen / emulierten Implementierungen.
+Unter `components` sind die Ports mit ihren Adaptern definiert. Die Struktur sieht dabei folgendermaßen aus:
 
 ```text
-domain <- ports <- app
-					^
-					|
-				adapters
+components/
+|- port.h
+|- adapter1
+|-- CMakeList.txt
+|-- adapter.c
+|-- adapter.h
+|-- ...
+|- adapter2
+|-- ...
 ```

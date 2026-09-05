@@ -1,6 +1,6 @@
 dependencies:
   idf: '>=5.4.0'
   johannh/databus:
-    override_path: "../../components/databus/"
+    override_path: "../../components/intracom/databus/"
   johannh/uv_pt100:
-    override_path: "../../components/uv_pt100/"
+    override_path: "../../components/sensor/uv_pt100/"
