@@ -11,12 +11,32 @@ Unter `components` sind die Ports mit ihren Adaptern definiert. Die Struktur sie
 
 ```text
 components/
-|- port.h
-|- adapter1
-|-- CMakeList.txt
-|-- adapter.c
-|-- adapter.h
-|-- ...
-|- adapter2
-|-- ...
+|- port/
+|-- port.h
+|-- adapter/
+|--- include/
+|---- adapter.h
+|--- CMakeList.txt
+|--- idf_component.yml
+|--- adapter.c
 ```
+## Übersicht Messungen
+
+| Kennung | Sensor | Messgröße | Einheit | Adapter |
+|---------|--------|-----------|---------|---------|
+| m | - | - | - | mock |
+||||||
+| s | Geigerzähler | Zerfallsrate | Hz | geiger |
+||||||
+| h | BME280 | Luftfeuchtigkeit | % relative Feuchtigkeit | bme280_s |
+| t2 | BME280 | Temperatur | °C | bme280_s |
+| p | BME280 | Druck | hPa | bme280_s |
+||||||
+| t1 | Pt1000 | Temperatur | °C | pt1000 |
+||||||
+| la | NEO-m8 | Breitengrad | ° | - |
+| lo | NEO-m8 | Längengrad | ° | - |
+| hi | NEO-m8 | Höhe | m (?) | - |
+||||||
+| ? | BNO055 | ? | ? | ? |
+
