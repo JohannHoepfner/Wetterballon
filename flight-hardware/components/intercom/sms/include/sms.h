@@ -6,6 +6,6 @@
 
 esp_err_t sms_init(void);
 esp_err_t sms_deinit(void);
-esp_err_t sms_send_msg(char *buf, size_t buflen);
+esp_err_t sms_send_msg(char *msg, size_t msg_len);
 
 extern Intercom sms;
