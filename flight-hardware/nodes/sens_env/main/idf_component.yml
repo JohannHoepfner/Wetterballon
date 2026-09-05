@@ -6,5 +6,7 @@ dependencies:
     override_path: "../../../components/sensor/mock/"
   johannh/geiger:
     override_path: "../../../components/sensor/geiger/"
+  johannh/bme280_s:
+    override_path: "../../../components/sensor/bme280_s/"
   johannh/sd_card:
     override_path: "../../../components/store/sd_card/"

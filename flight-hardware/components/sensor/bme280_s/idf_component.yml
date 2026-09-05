@@ -1,0 +1,9 @@
+description: BME280 environmental sensor adapter
+maintainers:
+    - Johann Höpfner <mail@johann-hoepfner.de>
+version: "1.0.0"
+license: "MIT"
+dependencies:
+  idf:
+    version: ">=5.4.0"
+  espressif/bme280: "^0.1.1"

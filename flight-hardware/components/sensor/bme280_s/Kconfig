@@ -1,0 +1,11 @@
+menu "BME280"
+    config BME280_SDA_PIN
+        int "BME280 SDA pin number"
+        default 11
+        range 0 56
+
+    config BME280_SCL_PIN
+        int "BME280 SCL pin number"
+        default 10
+        range 0 56
+endmenu
