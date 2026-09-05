@@ -41,17 +41,17 @@ static void sensor_task(void *arg)
 
         xSemaphoreTake(context->output_mutex, portMAX_DELAY);
 
-        esp_err_t err = context->store->save(now, sensor_value);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to save data to SD card: %s (0x%x)",
-                     esp_err_to_name(err), err);
-        } else {
-            err = context->intracom->send_data(now, sensor_value);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to send data via intracom: %s (0x%x)",
-                         esp_err_to_name(err), err);
-            }
-        }
+        // esp_err_t err = context->store->save(now, sensor_value);
+        // if (err != ESP_OK) {
+        //     ESP_LOGE(TAG, "Failed to save data to SD card: %s (0x%x)",
+        //              esp_err_to_name(err), err);
+        // } else {
+        //     err = context->intracom->send_data(now, sensor_value);
+        //     if (err != ESP_OK) {
+        //         ESP_LOGE(TAG, "Failed to send data via intracom: %s (0x%x)",
+        //                  esp_err_to_name(err), err);
+        //     }
+        // }
 
         xSemaphoreGive(context->output_mutex);
         vTaskDelay(context->schedule->read_interval);
@@ -78,7 +78,7 @@ void app_main(void)
     Sensor *sensor_pt1000 = &pt1000;
 
     ESP_ERROR_CHECK(intracom_databus->init());
-    ESP_ERROR_CHECK(store_sd_card->init());
+    // ESP_ERROR_CHECK(store_sd_card->init());
     // ESP_ERROR_CHECK(sensor_mock->init(sensor_mock));
     // ESP_ERROR_CHECK(sensor_geiger->init(sensor_geiger));
     // ESP_ERROR_CHECK(sensor_bme280->init(sensor_bme280));

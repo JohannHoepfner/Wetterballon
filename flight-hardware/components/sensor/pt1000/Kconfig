@@ -10,7 +10,7 @@ menu "PT1000"
             range 0 56
         config PT1000_I2C_ADC_ADDR
             hex "I2C Address of ads1115"
-            default 0x48
+            default 0x49
             range 0x48 0x4b
     endmenu
 endmenu
