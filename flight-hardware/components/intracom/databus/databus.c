@@ -14,7 +14,7 @@ static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PRE
               "sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)"
               "overflows ESP_NOW_MAX_LEN");
 
-static const char *TAG = "DATABUS";
+static const char *TAG = "intracom/databus";
 
 Intracom databus = {
     .init = databus_init,

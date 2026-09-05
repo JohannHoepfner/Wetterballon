@@ -1,5 +1,7 @@
 #pragma once
 
+#include "databus.h"
+
 #include <esp_err.h>
 
 typedef struct Store {

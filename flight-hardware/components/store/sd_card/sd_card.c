@@ -1,3 +1,4 @@
+#include "sd_card.h"
 #include "../store.h"
 
 #include "esp_err.h"
@@ -6,9 +7,9 @@
 #include <sys/stat.h>
 #include <sys/unistd.h>
 
-static const char *TAG = "sd_card";
+static const char *TAG = "store/sd_card";
 
-Store sdcard = {
+Store sd_card = {
     .init = sdcard_init,
     .deinit = sdcard_deinit,
     .save = save_databus_message,
@@ -17,7 +18,7 @@ Store sdcard = {
 
 sdmmc_card_t *card;
 
-esp_err_t sdcard_init() {
+esp_err_t sdcard_init(void) {
     esp_err_t err;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -39,7 +40,7 @@ esp_err_t sdcard_init() {
 
     err = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize bus.");
+        ESP_LOGE(TAG, "Failed to initialize bus");
         return err;
     }
 

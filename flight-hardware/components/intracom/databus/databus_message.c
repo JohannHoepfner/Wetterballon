@@ -26,6 +26,7 @@ int databus_message_to_send(struct databus_message *in_message, struct databus_m
 
     return 0;
 }
+
 int databus_message_from_recv(struct databus_message *in_message, struct databus_message *out_message) {
     out_message->send_time = be64toh(in_message->send_time);
 

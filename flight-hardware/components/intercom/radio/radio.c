@@ -10,7 +10,7 @@
 #include "radio.h"
 #include "si5351.h"
 
-static const char *TAG = "radio";
+static const char *TAG = "intercom/radio";
 
 Intercom radio = {
     .init = radio_init,

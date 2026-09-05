@@ -1,4 +1,8 @@
 dependencies:
   idf: ">=5.4.0"
+  johannh/databus:
+    override_path: "../../../components/intracom/databus/"
   johannh/sms:
     override_path: "../../../components/intercom/sms/"
+  johannh/sd_card:
+    override_path: "../../../components/store/sd_card/"

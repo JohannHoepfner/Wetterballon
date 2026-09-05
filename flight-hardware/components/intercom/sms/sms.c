@@ -5,7 +5,7 @@
 #include "esp_log.h"
 #include <time.h>
 
-static const char *TAG = "sms";
+static const char *TAG = "intercom/sms";
 
 Intercom sms = {
     .init = sms_init,

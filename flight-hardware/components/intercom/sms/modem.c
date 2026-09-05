@@ -15,7 +15,7 @@
 #include <string.h>
 #include <time.h>
 
-static const char *TAG = "modem";
+static const char *TAG = "intercom/modem";
 static esp_netif_t *modem_netif;
 
 #if defined(CONFIG_SIM_GATEWAY_FLOW_CONTROL_NONE)
