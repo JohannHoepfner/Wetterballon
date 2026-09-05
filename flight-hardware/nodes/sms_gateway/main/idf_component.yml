@@ -4,5 +4,9 @@ dependencies:
     override_path: "../../../components/intracom/databus/"
   johannh/sms:
     override_path: "../../../components/intercom/sms/"
+  johannh/mock:
+    override_path: "../../../components/sensor/mock/"
+  johannh/geiger:
+    override_path: "../../../components/sensor/geiger/"
   johannh/sd_card:
     override_path: "../../../components/store/sd_card/"

@@ -8,5 +8,5 @@ struct Sensor {
     void *ctx;
 
     esp_err_t (*init)(Sensor *self);
-    double (*read)(Sensor *self);
+    char *(*read)(Sensor *self);
 };

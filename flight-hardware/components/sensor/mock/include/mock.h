@@ -4,7 +4,8 @@
 
 #include <esp_err.h>
 
-esp_err_t mock_init(void);
-double mock_get_freq();
+esp_err_t mock_init(Sensor *self);
+char *mock_read(Sensor *self);
+char *mock_format(double value);
 
-extern Sensor mock_sensor;
+extern Sensor mock;

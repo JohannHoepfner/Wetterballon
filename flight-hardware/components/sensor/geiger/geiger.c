@@ -3,6 +3,7 @@
 #include <esp_err.h>
 #include <esp_timer.h>
 #include <esp_log.h>
+#include <stdio.h>
 
 #include <driver/gpio.h>
 
@@ -11,12 +12,14 @@
 
 static volatile uint64_t pulse_count = 0;
 static int64_t last_time;
+static double frequency;
+static char formatted_frequency[32];
 
 static void IRAM_ATTR gpio_isr_handler(void *arg) { pulse_count++; }
 
-Sensor geiger_sensor = {
+Sensor geiger = {
     .init = geiger_init,
-    .read = geiger_get_freq,
+    .read = geiger_read,
 };
 
 esp_err_t geiger_init(Sensor *self) {
@@ -51,12 +54,18 @@ esp_err_t geiger_init(Sensor *self) {
     return ESP_OK;
 }
 
-double geiger_get_freq(Sensor *self) {
+char *geiger_read(Sensor *self) {
     (void)self;
 
     int64_t time = esp_timer_get_time();
     double dt = time - last_time;
     last_time = time;
-    double freq = pulse_count / dt;
-    return freq;
+    frequency = pulse_count / dt;
+    pulse_count = 0;
+    return geiger_format(frequency);
+}
+
+char *geiger_format(double value) {
+    snprintf(formatted_frequency, sizeof(formatted_frequency), "s=%.2f", value);
+    return formatted_frequency;
 }

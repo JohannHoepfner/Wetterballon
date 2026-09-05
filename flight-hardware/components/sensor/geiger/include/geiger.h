@@ -5,6 +5,7 @@
 #include <esp_err.h>
 
 esp_err_t geiger_init(Sensor *self);
-double geiger_get_freq(Sensor *self);
+char *geiger_read(Sensor *self);
+char *geiger_format(double value);
 
-extern Sensor geiger_sensor;
+extern Sensor geiger;

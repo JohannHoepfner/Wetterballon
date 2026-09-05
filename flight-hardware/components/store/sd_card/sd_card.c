@@ -1,8 +1,12 @@
 #include "sd_card.h"
 
+#include "esp_log.h"
 #include "esp_err.h"
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>
 
@@ -11,7 +15,7 @@ static const char *TAG = "store/sd_card";
 Store sd_card = {
     .init = sdcard_init,
     .deinit = sdcard_deinit,
-    .save = save_databus_message,
+    .save = write_data,
     .load = read_databus_messages,
 };
 
@@ -77,35 +81,69 @@ esp_err_t sdcard_deinit() {
 }
 
 const char *data_file_path = CONFIG_SD_CARD_MOUNT_POINT "/data";
-esp_err_t save_databus_message(struct databus_message *message) {
-    struct databus_message buf;
-    databus_message_to_send(message, &buf);
-
+esp_err_t write_data(time_t time, char *msg_str) {
     FILE *data_file = fopen(data_file_path, "a");
     if (data_file == NULL) {
         ESP_LOGE(TAG, "Failed to open file for writing");
         return ESP_ERR_INVALID_STATE;
     }
 
-    fwrite((char *)&buf, sizeof(struct databus_message), 1, data_file);
+    fprintf(data_file, "%llu:%u:%s\n", (unsigned long long)time,
+            DATABUS_MSG_TYPE_DAT, msg_str);
+
     fclose(data_file);
+
+    ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message=%s", (unsigned long long)time, DATABUS_MSG_TYPE_DAT, msg_str);
     return ESP_OK;
 }
 
 ssize_t read_databus_messages(struct databus_message *out_messages, size_t start, size_t count) {
-    struct databus_message *buf = malloc(sizeof(struct databus_message) * count);
     FILE *data_file = fopen(data_file_path, "r");
     if (data_file == NULL) {
         ESP_LOGE(TAG, "Failed to open file for reading");
         return -1;
     }
-    fseek(data_file, start * sizeof(struct databus_message), SEEK_SET);
-    int num = fread(buf, sizeof(struct databus_message), count, data_file);
-    fclose(data_file);
 
-    for (int n = 0; n < num; ++n) {
-        databus_message_from_recv(buf + n, out_messages + n);
+    char line[sizeof(struct databus_message) + 32];
+    size_t line_number = 0;
+    size_t num = 0;
+    while (num < count && fgets(line, sizeof(line), data_file) != NULL) {
+        if (line_number++ < start) {
+            continue;
+        }
+
+        unsigned long long send_time;
+        unsigned int type;
+        char payload[sizeof(out_messages[num].data.message)];
+        if (sscanf(line, "%llu:%u:%219[^\n]", &send_time, &type, payload) != 3) {
+            fclose(data_file);
+            return -1;
+        }
+
+        memset(&out_messages[num], 0, sizeof(out_messages[num]));
+        out_messages[num].send_time = send_time;
+        out_messages[num].type = type;
+        switch (type) {
+        case DATABUS_MSG_TYPE_DAT:
+            strncpy(out_messages[num].data.message, payload,
+                    sizeof(out_messages[num].data.message) - 1);
+            break;
+        case DATABUS_MSG_TYPE_LOG:
+            strncpy(out_messages[num].log.message, payload,
+                    sizeof(out_messages[num].log.message) - 1);
+            break;
+        case DATABUS_MSG_TYPE_TMS:
+            out_messages[num].timesync.time = strtoull(payload, NULL, 10);
+            break;
+        default:
+            fclose(data_file);
+            return -1;
+        }
+        ++num;
     }
 
-    return num;
+    fclose(data_file);
+
+    ESP_LOGI(TAG, "Read %zu messages from SD card starting at line %zu", num, start);
+    return (ssize_t)num;
 }
