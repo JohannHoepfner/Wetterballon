@@ -1,4 +1,4 @@
-description: mock sensor adapter
+description: pt1000 sensor adapter
 maintainers:
   - Paul Maier <contact@paulmaier.online>
 version: "1.0.0"

@@ -1,6 +1,6 @@
-description: BME280 environmental sensor adapter
+description: bme280 sensor adapter
 maintainers:
-    - Johann Höpfner <mail@johann-hoepfner.de>
+  - Paul Maier <contact@paulmaier.online>
 version: "1.0.0"
 license: "MIT"
 dependencies:
