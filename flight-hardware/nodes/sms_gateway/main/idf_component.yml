@@ -1,0 +1,4 @@
+dependencies:
+  idf: ">=5.4.0"
+  johannh/sms:
+    override_path: "../../../components/intercom/sms/"

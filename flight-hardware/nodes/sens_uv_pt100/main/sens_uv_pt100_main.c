@@ -1,5 +1,6 @@
 #include "databus.h"
 #include "uv_pt100.h"
+#include "status_led.h"
 
 #include <esp_event.h>
 #include <esp_log.h>
@@ -12,6 +13,9 @@ void app_main(void) {
     ESP_LOGI(TAG, "init");
 
     Intracom *intracom_databus = &databus;
+    StatusIndicator *status_indicator_led = &status_led;
+
+    // TODO: Check if there is a less memory intensive way to do this
 
     Sensor *uv_1 = &uv_pt100_sensor;
     uv_1->ctx = malloc(sizeof(UV_PT100_Sensor));
@@ -38,13 +42,17 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+    // Init components
     ESP_ERROR_CHECK(intracom_databus->init());
+    ESP_ERROR_CHECK(status_indicator_led->init());
+    ESP_ERROR_CHECK(status_indicator_led->set_status(OK));
 
     ESP_ERROR_CHECK(uv_1->init(uv_1));
     ESP_ERROR_CHECK(uv_2->init(uv_2));
     ESP_ERROR_CHECK(uv_3->init(uv_3));
     ESP_ERROR_CHECK(pt100->init(pt100));
 
+    // Sensor Data loop
     while (true) {
         double cels = pt100->read(pt100);
         ESP_LOGI(TAG, "%lf°C", cels);
@@ -57,5 +65,7 @@ void app_main(void) {
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    return;
+
+    // Deinit components
+
 }

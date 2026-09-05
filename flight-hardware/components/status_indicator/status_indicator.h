@@ -2,7 +2,13 @@
 
 #include <esp_err.h>
 
+typedef enum {
+	ERROR,
+	WARNING,
+    OK
+} Status;
+
 typedef struct StatusIndicator {
     esp_err_t (*init)();
-    esp_err_t (*set_status)(struct color color); // TODO: Should later just contain an enum for status
+    esp_err_t (*set_status)(Status status);
 } StatusIndicator;

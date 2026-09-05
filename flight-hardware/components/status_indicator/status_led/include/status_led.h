@@ -18,6 +18,6 @@ struct color {
 #define YELLOW (struct color){25, 25, 0}
 
 esp_err_t status_led_init(void);
-esp_err_t status_led_set(struct color color);
+esp_err_t status_led_set(Status status);
 
 extern StatusIndicator status_led;

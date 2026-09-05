@@ -1,4 +1,5 @@
 #include "../status_indicator.h"
+#include "status_led.h"
 
 #include "led_strip.h"
 
@@ -6,20 +7,10 @@ led_strip_handle_t led_strip;
 
 StatusIndicator status_led = {
     .init = status_led_init,
-    .read = status_led_set,
+    .set_status = status_led_set,
 };
 
-struct color color_mix(struct color a, struct color b, double ratio) { // TODO: move to utils
-    ratio = MIN(ratio, 1.);
-    ratio = MAX(ratio, 0.);
-    return (struct color){
-        .r = a.r * ratio + b.r * (1 - ratio),
-        .g = a.g * ratio + b.g * (1 - ratio),
-        .b = a.b * ratio + b.b * (1 - ratio),
-    };
-}
-
-esp_err_t status_led_init() {
+esp_err_t status_led_init(void) {
     led_strip_config_t strip_config = {
         .strip_gpio_num = BLINK_GPIO,
         .max_leds = 1,
@@ -44,7 +35,23 @@ esp_err_t status_led_init() {
     return ESP_OK;
 }
 
-esp_err_t status_led_set(struct color color) {
+esp_err_t status_led_set(Status status) {
+    struct color color;
+
+    switch (status) {
+        case ERROR:
+            color = RED;
+            break;
+        case WARNING:
+            color = YELLOW;
+            break;
+        case OK:
+            color = GREEN;
+            break;
+        default:
+            return ESP_ERR_INVALID_ARG;
+    }
+
     esp_err_t err;
     err = led_strip_set_pixel(led_strip, 0, color.r, color.g, color.b);
     if (err != ESP_OK) {
