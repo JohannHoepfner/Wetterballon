@@ -93,7 +93,7 @@ esp_err_t write_data(time_t time, char *msg_str) {
 
     fclose(data_file);
 
-    ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message=%s", (unsigned long long)time, DATABUS_MSG_TYPE_DAT, msg_str);
+    ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message='%s'", (unsigned long long)time, DATABUS_MSG_TYPE_DAT, msg_str);
     return ESP_OK;
 }
 

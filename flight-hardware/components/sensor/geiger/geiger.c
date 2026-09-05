@@ -10,6 +10,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+static const char *TAG = "sensor/geiger";
+
 static volatile uint64_t pulse_count = 0;
 static int64_t last_time;
 static double frequency;
@@ -51,6 +53,8 @@ esp_err_t geiger_init(Sensor *self) {
         return err;
     }
 
+    ESP_LOGI(TAG, "Geiger sensor initialized on pin %d", CONFIG_GEIGER_PULSE_PIN);
+
     return ESP_OK;
 }
 
@@ -62,6 +66,9 @@ char *geiger_read(Sensor *self) {
     last_time = time;
     frequency = pulse_count / dt;
     pulse_count = 0;
+
+    ESP_LOGI(TAG, "Geiger sensor read: frequency=%.2f Hz", frequency);
+
     return geiger_format(frequency);
 }
 
