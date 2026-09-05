@@ -1,7 +1,5 @@
 #pragma once
 
-#include "databus_message.h"
-
 #include <stdint.h>
 #include <time.h>
 

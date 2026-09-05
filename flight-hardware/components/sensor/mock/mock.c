@@ -1,5 +1,3 @@
-#include "../sensor.h"
-
 #include "mock.h"
 
 #include <esp_err.h>

@@ -1,4 +1,3 @@
-#include "../status_indicator.h"
 #include "status_led.h"
 
 #include "led_strip.h"

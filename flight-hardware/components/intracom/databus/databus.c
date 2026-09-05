@@ -1,4 +1,5 @@
-#include "include/databus.h"
+#include "databus.h"
+#include "databus_message.h"
 
 #include <string.h>
 #include <sys/select.h>
@@ -8,7 +9,6 @@
 #include "esp_log.h"
 #include "esp_now.h"
 #include "esp_wifi.h"
-#include "include/databus_message.h"
 
 static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX) <= ESP_NOW_MAX_DATA_LEN,
               "sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)"

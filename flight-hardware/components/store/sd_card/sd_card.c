@@ -1,5 +1,4 @@
 #include "sd_card.h"
-#include "../store.h"
 
 #include "esp_err.h"
 #include "esp_vfs_fat.h"
@@ -13,7 +12,7 @@ Store sd_card = {
     .init = sdcard_init,
     .deinit = sdcard_deinit,
     .save = save_databus_message,
-    .read = read_databus_messages,
+    .load = read_databus_messages,
 };
 
 sdmmc_card_t *card;

@@ -1,14 +1,13 @@
-#include <freertos/FreeRTOS.h>
+#include "radio.h"
+#include "si5351.h"
 
+#include <freertos/FreeRTOS.h>
 #include <driver/gpio.h>
 #include <esp_err.h>
 #include <esp_event.h>
 #include <esp_log.h>
 #include <freertos/event_groups.h>
 #include <unistd.h>
-
-#include "radio.h"
-#include "si5351.h"
 
 static const char *TAG = "intercom/radio";
 
