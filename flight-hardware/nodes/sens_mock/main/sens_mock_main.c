@@ -1,10 +1,6 @@
 #include "databus.h"
-#include "sd_card.h"
 #include "log_store.h"
 #include "mock.h"
-#include "geiger.h"
-#include "bme280_s.h"
-#include "pt1000.h"
 #include "sensor_task.h"
 
 #include <freertos/FreeRTOS.h>
@@ -18,7 +14,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-static const char *TAG = "sens_env";
+static const char *TAG = "sens_mock";
 
 void app_main(void)
 {
@@ -33,26 +29,19 @@ void app_main(void)
     
     Intracom *intracom = &databus;
     Store *store = &log_store;
-    Sensor *sensor_geiger = &geiger;
-    Sensor *sensor_bme280 = &bme280_s;
-    Sensor *sensor_pt1000 = &pt1000;
+
+    Sensor *sensor_mock = &mock;
 
     ESP_ERROR_CHECK(intracom->init());
     ESP_ERROR_CHECK(store->init());
-    ESP_ERROR_CHECK(sensor_geiger->init(sensor_geiger));
-    ESP_ERROR_CHECK(sensor_bme280->init(sensor_bme280));
-    ESP_ERROR_CHECK(sensor_pt1000->init(sensor_pt1000));
+    ESP_ERROR_CHECK(sensor_mock->init(sensor_mock));
 
     static SensorSchedule schedules[] = {
-        {NULL, pdMS_TO_TICKS(500)},
-        {NULL, pdMS_TO_TICKS(1000)},
         {NULL, pdMS_TO_TICKS(1000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 
-    schedules[0].sensor = sensor_geiger;
-    schedules[1].sensor = sensor_bme280;
-    schedules[2].sensor = sensor_pt1000;
+    schedules[0].sensor = sensor_mock;
 
     SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();
     if (output_mutex == NULL) {

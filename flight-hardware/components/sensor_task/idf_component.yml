@@ -1,0 +1,7 @@
+description: shared sensor read and output task
+version: "1.0.0"
+license: "MIT"
+dependencies:
+  idf:
+    version: ">=5.4.0"
+
