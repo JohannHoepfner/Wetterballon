@@ -1,0 +1,10 @@
+description: mock sensor adapter
+maintainers:
+  - Paul Maier <contact@paulmaier.online>
+version: "1.0.0"
+license: "MIT"
+dependencies:
+  idf: '>=5.4.0'
+  johannh/databus:
+    override_path: ../../../components/intracom/databus/
+  espp/gps: ^1.3.0

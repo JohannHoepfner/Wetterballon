@@ -14,7 +14,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-static const char *TAG = "sens_mock";
+static const char *TAG = "node/sens_mock";
 
 void app_main(void)
 {

@@ -1,4 +1,4 @@
-description: sim7600 sms
+description: sim7600 modem + PPP data session + SMTP intercom adapter
 maintainers:
     - Johann Höpfner <mail@johann-hoepfner.de>
 version: "1.0.0"

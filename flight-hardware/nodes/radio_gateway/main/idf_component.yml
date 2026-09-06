@@ -1,8 +1,12 @@
 dependencies:
   idf: ">=5.4.0"
-  johannh/radio:
-    override_path: "../../../components/intercom/radio/"
   johannh/databus:
     override_path: "../../../components/intracom/databus/"
+  johannh/sim_modem:
+    override_path: "../../../components/intercom/sim_modem/"
   johannh/log_store:
     override_path: "../../../components/store/log_store/"
+  johannh/neo_m8:
+    override_path: "../../../components/sensor/neo_m8/"
+  johannh/sensor_task:
+    override_path: "../../../components/sensor_task/"

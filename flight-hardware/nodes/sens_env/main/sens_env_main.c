@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-static const char *TAG = "sens_env";
+static const char *TAG = "node/sens_env";
 
 void app_main(void)
 {
@@ -33,12 +33,13 @@ void app_main(void)
     
     Intracom *intracom = &databus;
     Store *store = &log_store;
-    // Sensor *sensor_geiger = &geiger;
-    // Sensor *sensor_bme280 = &bme280_s;
-    Sensor *sensor_pt1000 = &pt1000;
 
     ESP_ERROR_CHECK(intracom->init());
     ESP_ERROR_CHECK(store->init());
+
+    // Sensor *sensor_geiger = &geiger;
+    // Sensor *sensor_bme280 = &bme280_s;
+    Sensor *sensor_pt1000 = &pt1000;
 
     static SensorSchedule schedules[] = {
         {"geiger", NULL, pdMS_TO_TICKS(500)},

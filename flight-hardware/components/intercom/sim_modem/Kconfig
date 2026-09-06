@@ -1,0 +1,53 @@
+menu "Sim7600 modem config"
+    config MODEM_UART_TX_PIN
+        int "Modem UART TXD pin"
+        default 25
+
+    config MODEM_UART_RX_PIN
+        int "Modem UART RXD pin"
+        default 26
+
+    config MODEM_UART_RTS_PIN
+        int "Modem UART RTS pin"
+        default 27
+
+    config MODEM_UART_CTS_PIN
+        int "Modem UART CTS pin"
+        default 23
+
+    config MODEM_PPP_APN
+        string "Cellular APN"
+        default "internet"
+
+    config MODEM_NEED_SIM_PIN
+        bool "SIM PIN needed"
+        default n
+
+    config MODEM_SIM_PIN
+        string "SIM PIN"
+        default "1234"
+        depends on MODEM_NEED_SIM_PIN
+
+    config MODEM_SMTP_HOST
+        string "SMTP server hostname/IP"
+        default "mail.johann-hoepfner.de"
+        help
+            Mail server contacted directly (no relay auth, no MX lookup).
+
+    config MODEM_SMTP_PORT
+        int "SMTP server port"
+        default 25
+
+    config MODEM_MAIL_FROM
+        string "Envelope/header From address"
+        default "wb@wb"
+
+    config MODEM_MAIL_TO
+        string "Envelope/header To address"
+        default "mail@johann-hoepfner.de"
+
+    config MODEM_SEND_INTERVAL_SEC
+        int "Email send interval in seconds"
+        default 3600
+        range 1 2147483
+endmenu
