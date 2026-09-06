@@ -1,6 +1,5 @@
 #include "mock_store.h"
 
-#include "databus.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include <stdio.h>
@@ -10,24 +9,24 @@
 static const char *TAG = "store/mock_store";
 
 Store mock_store = {
-    .init = log_init,
-    .deinit = log_deinit,
-    .save = log_data,
+    .init = mock_store_init,
+    .deinit = mock_store_deinit,
+    .save = mock_store_save,
 };
 
-esp_err_t log_init(void) {
+esp_err_t mock_store_init(void) {
     ESP_LOGI(TAG, "Mock store adapter initialized");
 
     return ESP_OK;
 }
 
-esp_err_t log_deinit() {
+esp_err_t mock_store_deinit() {
     ESP_LOGI(TAG, "Mock store adapter deinitialized");
 
     return ESP_OK;
 }
 
-esp_err_t log_data(time_t time, char *msg_str) {
+esp_err_t mock_store_save(time_t time, char *msg_str) {
     ESP_LOGI(TAG, "Mock store adapter write data: send_time=%llu, message='%s'", (unsigned long long)time, msg_str);
 
     return ESP_OK;
