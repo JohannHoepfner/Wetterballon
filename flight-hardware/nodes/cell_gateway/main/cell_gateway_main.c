@@ -13,7 +13,7 @@
 #include "sdkconfig.h"
 #include "esp_led.h"
 
-static const char *TAG = "node/sim_gateway";
+static const char *TAG = "node/cell_gateway";
 
 #define AGG_BUF_SIZE 4096
 
@@ -58,7 +58,7 @@ void app_main(void) {
     Store *store = &sd_card;
     StatusIndicator *status_indicator = &esp_led;
 
-    ESP_ERROR_CHECK(intracom->init(NODE_ID_SIM_GATEWAY));
+    ESP_ERROR_CHECK(intracom->init(NODE_ID_CELL_GATEWAY));
     ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_LOG, on_databus_log));
     ESP_ERROR_CHECK(store->init());

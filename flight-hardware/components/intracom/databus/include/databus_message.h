@@ -4,7 +4,7 @@
 #include <time.h>
 
 typedef enum {
-    NODE_ID_SIM_GATEWAY = 1,
+    NODE_ID_CELL_GATEWAY = 1,
     NODE_ID_RADIO_GATEWAY = 2,
     NODE_ID_SENS_ENV = 3,
     NODE_ID_SENS_MISC = 4,

@@ -9,8 +9,8 @@
 
 const char *databus_get_node_name(NODE_ID node_id) {
     switch (node_id) {
-    case NODE_ID_SIM_GATEWAY:
-        return "sim_gateway";
+    case NODE_ID_CELL_GATEWAY:
+        return "cell_gateway";
     case NODE_ID_RADIO_GATEWAY:
         return "radio_gateway";
     case NODE_ID_SENS_ENV:
