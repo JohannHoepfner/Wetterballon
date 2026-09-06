@@ -4,6 +4,9 @@
 
 #include "driver/gpio.h"
 #include "led_strip.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 #include <esp_err.h>
 #include <esp_log.h>
 
@@ -16,6 +19,7 @@ typedef struct EspLedContext {
 EspLedContext esp_led_context;
 
 led_strip_handle_t led_strip;
+static SemaphoreHandle_t esp_led_mutex;
 
 StatusIndicator esp_led = {
     .ctx  = &esp_led_context,
@@ -24,6 +28,11 @@ StatusIndicator esp_led = {
 };
 
 esp_err_t esp_led_init(StatusIndicator *self) {
+    esp_led_mutex = xSemaphoreCreateMutex();
+    if (esp_led_mutex == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
     led_strip_config_t strip_config = {
         .strip_gpio_num = GPIO_NUM_8,
         .max_leds = 1,
@@ -52,7 +61,12 @@ esp_err_t esp_led_init(StatusIndicator *self) {
 }
 
 esp_err_t esp_led_set(StatusIndicator *self, Status status) {
+    if (esp_led_mutex == NULL || xSemaphoreTake(esp_led_mutex, portMAX_DELAY) != pdTRUE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     if (((EspLedContext *)self->ctx)->status == UNRECOVERABLE_ERROR) {
+        xSemaphoreGive(esp_led_mutex);
         return ESP_OK;
     }
 
@@ -74,20 +88,24 @@ esp_err_t esp_led_set(StatusIndicator *self, Status status) {
         color = GREEN;
         break;
     default:
+        xSemaphoreGive(esp_led_mutex);
         return ESP_ERR_INVALID_ARG;
     }
 
     esp_err_t err;
     err = led_strip_set_pixel(led_strip, 0, color.r, color.g, color.b);
     if (err != ESP_OK) {
+        xSemaphoreGive(esp_led_mutex);
         return err;
     }
     err = led_strip_refresh(led_strip);
     if (err != ESP_OK) {
+        xSemaphoreGive(esp_led_mutex);
         return err;
     }
 
     ((EspLedContext *)self->ctx)->status = status;
+    xSemaphoreGive(esp_led_mutex);
 
     return ESP_OK;
 }

@@ -70,7 +70,8 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
 
     switch (msg.type) {
     case DATABUS_MSG_TYPE_DATA:
-        ESP_LOGI(TAG, "Received data message '%.*s' from '%s' with id %llu", sizeof(msg.data.message), msg.data.message, databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
+        ESP_LOGI(TAG, "Received data message '%.*s' from '%s' with id %llu", sizeof(msg.data.message), msg.data.message,
+                 databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
         for (int i = 0; i < num_data_callbacks; ++i) {
             if (data_callbacks[i] == NULL)
                 continue;
@@ -78,7 +79,8 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
         }
         break;
     case DATABUS_MSG_TYPE_LOG:
-        ESP_LOGI(TAG, "Received log message '%.*s' from '%s' with id %llu", sizeof(msg.log.message), msg.log.message, databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
+        ESP_LOGI(TAG, "Received log message '%.*s' from '%s' with id %llu", sizeof(msg.log.message), msg.log.message,
+                 databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
         for (int i = 0; i < num_log_callbacks; ++i) {
             if (log_callbacks[i] == NULL)
                 continue;
@@ -130,6 +132,7 @@ esp_err_t databus_send_data(time_t time, char *msg_str) {
     struct databus_message msg = {
         .send_time = time, .type = DATABUS_MSG_TYPE_DATA, .node_id = node_id, .msg_id = mesage_id_counter++};
     strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
+
     return databus_send(&msg);
 }
 
