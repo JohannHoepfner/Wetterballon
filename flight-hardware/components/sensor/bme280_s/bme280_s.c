@@ -24,9 +24,7 @@ Sensor bme280_s = {
     .read = bme280_read,
 };
 
-esp_err_t bme280_init(Sensor *self) {
-    (void)self;
-
+esp_err_t bme280_init(void) {
     i2c_config_t config = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = SDA_PIN,
@@ -57,7 +55,7 @@ esp_err_t bme280_init(Sensor *self) {
     return ESP_OK;
 }
 
-char *bme280_read(Sensor *self) {
+char *bme280_read(void) {
     (void)self;
 
     float temperature = 0.0F;

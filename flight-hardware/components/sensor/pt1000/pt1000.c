@@ -54,8 +54,8 @@ double get_voltage(ads1115_t *ads, ads1115_mux_t mux, ads1115_fsr_t fsr) {
     return volt;
 }
 
-esp_err_t pt1000_init(Sensor *self) {
-    (void)self;
+esp_err_t pt1000_init(void) {
+
 
     init_ads();
 
@@ -63,9 +63,7 @@ esp_err_t pt1000_init(Sensor *self) {
     return ESP_OK;
 }
 
-char *pt1000_read(Sensor *self) {
-    (void)self;
-
+char *pt1000_read(void) {
     double differential_voltage = get_voltage(&ads, ADS1115_MUX_0_1, ADS1115_FSR_6_144);
     double a3_voltage = get_voltage(&ads, ADS1115_MUX_3_GND, ADS1115_FSR_6_144);
 

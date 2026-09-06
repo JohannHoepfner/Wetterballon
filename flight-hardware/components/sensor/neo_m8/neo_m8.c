@@ -19,9 +19,7 @@ Sensor neo_m8 = {
     .read = neo_m8_read,
 };
 
-esp_err_t neo_m8_init(Sensor *self) {
-    (void)self;
-
+esp_err_t neo_m8_init(void) {
     esp_err_t err = gps_init();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize NEO-M8 GPS sensor");
@@ -32,9 +30,7 @@ esp_err_t neo_m8_init(Sensor *self) {
     return ESP_OK;
 }
 
-char *neo_m8_read(Sensor *self) {
-    (void)self;
-
+char *neo_m8_read(void) {
     double latitude;
     double longitude;
     float altitude;

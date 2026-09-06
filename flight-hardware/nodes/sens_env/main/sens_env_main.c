@@ -1,11 +1,12 @@
 #include "bme280_s.h"
 #include "databus.h"
 #include "geiger.h"
-#include "log_store.h"
+#include "mock_store.h"
 #include "mock.h"
 #include "pt1000.h"
 #include "sd_card.h"
 #include "sensor_task.h"
+#include "esp_led.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -31,24 +32,31 @@ void app_main(void) {
     ESP_ERROR_CHECK(ret);
 
     Intracom *intracom = &databus;
-    Store *store = &log_store;
+    Store *store = &mock_store;
+    StatusIndicator *status_indicator = &esp_led;
 
     ESP_ERROR_CHECK(intracom->init());
     ESP_ERROR_CHECK(store->init());
+    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
     // Sensor *sensor_geiger = &geiger;
     // Sensor *sensor_bme280 = &bme280_s;
     Sensor *sensor_pt1000 = &pt1000;
 
     static SensorSchedule schedules[] = {
-        {"geiger", NULL, pdMS_TO_TICKS(500)},
-        {"bme280", NULL, pdMS_TO_TICKS(1000)},
-        {"pt1000", NULL, pdMS_TO_TICKS(1000)},
+        {"geiger", NULL, NULL, pdMS_TO_TICKS(500)},
+        {"bme280", NULL, NULL, pdMS_TO_TICKS(1000)},
+        {"pt1000", NULL, NULL, pdMS_TO_TICKS(1000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 
+    schedules[0].status_indicator = status_indicator;
     // schedules[0].sensor = sensor_geiger;
+
+    schedules[1].status_indicator = status_indicator;
     // schedules[1].sensor = sensor_bme280;
+
+    schedules[2].status_indicator = status_indicator;
     schedules[2].sensor = sensor_pt1000;
 
     SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();

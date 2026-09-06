@@ -1,4 +1,4 @@
-description: log store adapter (for mocking storage)
+description: mock store adapter
 maintainers:
     - Johann Höpfner <mail@johann-hoepfner.de>
 version: "1.0.0"

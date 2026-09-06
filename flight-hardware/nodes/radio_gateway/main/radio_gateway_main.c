@@ -15,11 +15,12 @@
 
 #include "databus.h"
 #include "esp_log.h"
-#include "log_store.h"
+#include "mock_store.h"
 #include "neo_m8.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include "sensor_task.h"
+#include "esp_led.h"
 
 static const char *TAG = "modem_email_poc";
 
@@ -63,12 +64,14 @@ void app_main(void) {
     ESP_ERROR_CHECK(nvs_err);
 
     Intracom *intracom = &databus;
-    Store *store = &log_store;
+    Store *store = &mock_store;
+    StatusIndicator *status_indicator = &esp_led;
 
     ESP_ERROR_CHECK(intracom->init());
     ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_DAT, on_databus_data));
     ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_LOG, on_databus_log));
     ESP_ERROR_CHECK(store->init());
+    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
     // BaseType_t task_created = xTaskCreate(send_task, "sim_modem_send", 4096, NULL, 5, NULL);
     // if (task_created != pdPASS) {
@@ -78,10 +81,11 @@ void app_main(void) {
     Sensor *sensor_gps = &neo_m8;
 
     static SensorSchedule schedules[] = {
-        {"gps", NULL, pdMS_TO_TICKS(3000)},
+        {"gps", NULL, NULL, pdMS_TO_TICKS(3000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 
+    schedules[0].status_indicator = status_indicator;
     schedules[0].sensor = sensor_gps;
 
     SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();

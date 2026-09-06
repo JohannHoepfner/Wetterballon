@@ -22,9 +22,7 @@ Sensor geiger = {
     .read = geiger_read,
 };
 
-esp_err_t geiger_init(Sensor *self) {
-    (void)self;
-
+esp_err_t geiger_init(void) {
     esp_err_t err;
 
     gpio_config_t io_conf = {
@@ -54,9 +52,7 @@ esp_err_t geiger_init(Sensor *self) {
     return ESP_OK;
 }
 
-char *geiger_read(Sensor *self) {
-    (void)self;
-
+char *geiger_read(void) {
     ESP_LOGI(TAG, "Geiger sensor read: pulse_count=%llu", (unsigned long long)pulse_count);
 
     return geiger_format((unsigned long long)pulse_count);

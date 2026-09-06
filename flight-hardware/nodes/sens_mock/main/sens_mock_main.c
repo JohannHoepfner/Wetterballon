@@ -1,6 +1,7 @@
 #include "databus.h"
-#include "log_store.h"
+#include "esp_led.h"
 #include "mock.h"
+#include "mock_store.h"
 #include "sensor_task.h"
 
 #include <freertos/FreeRTOS.h>
@@ -27,19 +28,22 @@ void app_main(void) {
     ESP_ERROR_CHECK(ret);
 
     Intracom *intracom = &databus;
-    Store *store = &log_store;
-
-    Sensor *sensor_mock = &mock;
+    Store *store = &mock_store;
+    StatusIndicator *status_indicator = &esp_led;
 
     ESP_ERROR_CHECK(intracom->init());
     ESP_ERROR_CHECK(store->init());
+    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
+
+    Sensor *sensor_mock = &mock;
 
     static SensorSchedule schedules[] = {
-        {'mock', NULL, pdMS_TO_TICKS(1000)},
+        {"mock", NULL, NULL, pdMS_TO_TICKS(1000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 
     schedules[0].sensor = sensor_mock;
+    schedules[0].status_indicator = status_indicator;
 
     SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();
     if (output_mutex == NULL) {

@@ -1,17 +1,31 @@
-#include "status_led.h"
+#include "esp_led.h"
 
+#include "../status_indicator.h"
+
+#include "driver/gpio.h"
 #include "led_strip.h"
+#include <esp_err.h>
+#include <esp_log.h>
+
+static const char *TAG = "status_indicator/esp_led";
+
+typedef struct EspLedContext {
+    Status status;
+} EspLedContext;
+
+EspLedContext esp_led_context;
 
 led_strip_handle_t led_strip;
 
-StatusIndicator status_led = {
-    .init = status_led_init,
-    .set_status = status_led_set,
+StatusIndicator esp_led = {
+    .ctx  = &esp_led_context,
+    .init = esp_led_init,
+    .set_status = esp_led_set,
 };
 
-esp_err_t status_led_init(void) {
+esp_err_t esp_led_init(StatusIndicator *self) {
     led_strip_config_t strip_config = {
-        .strip_gpio_num = BLINK_GPIO,
+        .strip_gpio_num = GPIO_NUM_8,
         .max_leds = 1,
     };
     led_strip_rmt_config_t rmt_config = {
@@ -25,19 +39,31 @@ esp_err_t status_led_init(void) {
     if (err != ESP_OK) {
         return err;
     }
-
-    err = led_strip_clear(led_strip);
+    err = esp_led_set(self, INITIALIZING);
     if (err != ESP_OK) {
         return err;
     }
 
+    esp_led_set(self, OK);
+
+    ESP_LOGI(TAG, "LED initialized successfully");
+
     return ESP_OK;
 }
 
-esp_err_t status_led_set(Status status) {
-    struct color color;
+esp_err_t esp_led_set(StatusIndicator *self, Status status) {
+    if (((EspLedContext *)self->ctx)->status == UNRECOVERABLE_ERROR) {
+        return ESP_OK;
+    }
 
+    struct color color;
     switch (status) {
+    case INITIALIZING:
+        color = BLUE;
+        break;
+    case UNRECOVERABLE_ERROR:
+        color = PURPLE;
+        break;
     case ERROR:
         color = RED;
         break;
@@ -60,5 +86,8 @@ esp_err_t status_led_set(Status status) {
     if (err != ESP_OK) {
         return err;
     }
+
+    ((EspLedContext *)self->ctx)->status = status;
+
     return ESP_OK;
 }
