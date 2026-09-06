@@ -82,7 +82,7 @@ void app_main(void)
     Sensor *sensor_gps = &neo_m8;
 
     static SensorSchedule schedules[] = {
-        {"gps", NULL, pdMS_TO_TICKS(30000)},
+        {"gps", NULL, pdMS_TO_TICKS(3000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 

@@ -36,8 +36,9 @@ components/
 ||||||
 | t1 | Pt1000 | Temperatur | °C | pt1000 |
 ||||||
-| la | NEO-m8 | Breitengrad | ° | neo_m8 |
-| lo | NEO-m8 | Längengrad | ° | neo_m8 |
-| al | NEO-m8 | Höhe | m (?) | neo_m8 |
+| lat | NEO-m8 | Breitengrad | ° | neo_m8 |
+| lon | NEO-m8 | Längengrad | ° | neo_m8 |
+| alt | NEO-m8 | Höhe | m (?) | neo_m8 |
+| utc | NEO-m8 | Zeit (UTC) | Uhr | neo_m8 |
 ||||||
 | ? | BNO055 | ? | ? | ? |
