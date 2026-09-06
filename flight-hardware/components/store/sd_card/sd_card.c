@@ -1,7 +1,7 @@
 #include "sd_card.h"
 
-#include "esp_log.h"
 #include "esp_err.h"
+#include "esp_log.h"
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include <stdio.h>
@@ -88,12 +88,12 @@ esp_err_t write_data(time_t time, char *msg_str) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    fprintf(data_file, "%llu:%u:%s\n", (unsigned long long)time,
-            DATABUS_MSG_TYPE_DAT, msg_str);
+    fprintf(data_file, "%llu:%u:%s\n", (unsigned long long)time, DATABUS_MSG_TYPE_DAT, msg_str);
 
     fclose(data_file);
 
-    // ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message='%s'", (unsigned long long)time, DATABUS_MSG_TYPE_DAT, msg_str);
+    // ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message='%s'", (unsigned long long)time,
+    // DATABUS_MSG_TYPE_DAT, msg_str);
     return ESP_OK;
 }
 
@@ -125,12 +125,10 @@ ssize_t read_databus_messages(struct databus_message *out_messages, size_t start
         out_messages[num].type = type;
         switch (type) {
         case DATABUS_MSG_TYPE_DAT:
-            strncpy(out_messages[num].data.message, payload,
-                    sizeof(out_messages[num].data.message) - 1);
+            strncpy(out_messages[num].data.message, payload, sizeof(out_messages[num].data.message) - 1);
             break;
         case DATABUS_MSG_TYPE_LOG:
-            strncpy(out_messages[num].log.message, payload,
-                    sizeof(out_messages[num].log.message) - 1);
+            strncpy(out_messages[num].log.message, payload, sizeof(out_messages[num].log.message) - 1);
             break;
         case DATABUS_MSG_TYPE_TMS:
             out_messages[num].timesync.time = strtoull(payload, NULL, 10);

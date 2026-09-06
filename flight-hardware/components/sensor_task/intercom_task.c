@@ -1,6 +1,5 @@
 
-static void send_task(void *arg)
-{
+static void send_task(void *arg) {
     (void)arg;
 
     int backoff_sec = 5;

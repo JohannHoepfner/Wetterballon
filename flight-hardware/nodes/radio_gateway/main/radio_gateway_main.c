@@ -29,8 +29,7 @@ static SemaphoreHandle_t s_agg_mutex;
 static char s_agg_buf[AGG_BUF_SIZE];
 static size_t s_agg_len = 0;
 
-static void aggregate_message(const char *label, uint64_t send_time, const char *text, size_t text_maxlen)
-{
+static void aggregate_message(const char *label, uint64_t send_time, const char *text, size_t text_maxlen) {
     if (xSemaphoreTake(s_agg_mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
         ESP_LOGW(TAG, "Could not lock aggregate buffer, dropping message");
         return;
@@ -45,18 +44,15 @@ static void aggregate_message(const char *label, uint64_t send_time, const char 
     xSemaphoreGive(s_agg_mutex);
 }
 
-static void on_databus_data(struct databus_message *msg)
-{
+static void on_databus_data(struct databus_message *msg) {
     aggregate_message("DATA", msg->send_time, msg->data.message, sizeof(msg->data.message));
 }
 
-static void on_databus_log(struct databus_message *msg)
-{
+static void on_databus_log(struct databus_message *msg) {
     aggregate_message("LOG", msg->send_time, msg->log.message, sizeof(msg->log.message));
 }
 
-void app_main(void)
-{
+void app_main(void) {
     s_agg_mutex = xSemaphoreCreateMutex();
 
     esp_err_t nvs_err = nvs_flash_init();
@@ -101,13 +97,7 @@ void app_main(void)
             .store = store,
             .output_mutex = output_mutex,
         };
-        BaseType_t task_created = xTaskCreate(
-            sensor_task,
-            "sensor_read",
-            4096,
-            &task_contexts[i],
-            5,
-            NULL);
+        BaseType_t task_created = xTaskCreate(sensor_task, "sensor_read", 4096, &task_contexts[i], 5, NULL);
         if (task_created != pdPASS) {
             ESP_LOGE(TAG, "Failed to create task for sensor %zu", i);
         }

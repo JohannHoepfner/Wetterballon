@@ -1,27 +1,26 @@
+#include "bme280_s.h"
 #include "databus.h"
-#include "sd_card.h"
+#include "geiger.h"
 #include "log_store.h"
 #include "mock.h"
-#include "geiger.h"
-#include "bme280_s.h"
 #include "pt1000.h"
+#include "sd_card.h"
 #include "sensor_task.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 
-#include <nvs_flash.h>
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_netif.h>
+#include <nvs_flash.h>
 #include <stdbool.h>
 #include <string.h>
 
 static const char *TAG = "node/sens_env";
 
-void app_main(void)
-{
+void app_main(void) {
     ESP_LOGI(TAG, "init");
 
     esp_err_t ret = nvs_flash_init();
@@ -30,7 +29,7 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    
+
     Intracom *intracom = &databus;
     Store *store = &log_store;
 
@@ -65,13 +64,7 @@ void app_main(void)
             .store = store,
             .output_mutex = output_mutex,
         };
-        BaseType_t task_created = xTaskCreate(
-            sensor_task,
-            "sensor_read",
-            4096,
-            &task_contexts[i],
-            5,
-            NULL);
+        BaseType_t task_created = xTaskCreate(sensor_task, "sensor_read", 4096, &task_contexts[i], 5, NULL);
         if (task_created != pdPASS) {
             ESP_LOGE(TAG, "Failed to create task for sensor %zu", i);
         }

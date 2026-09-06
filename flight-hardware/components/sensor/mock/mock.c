@@ -1,7 +1,7 @@
 #include "mock.h"
 
-#include <esp_log.h>
 #include <esp_err.h>
+#include <esp_log.h>
 #include <esp_random.h>
 #include <stdio.h>
 
@@ -20,8 +20,7 @@ Sensor mock = {
     .read = mock_read,
 };
 
-esp_err_t mock_init(Sensor *self)
-{
+esp_err_t mock_init(Sensor *self) {
     MockSensor *mock = (MockSensor *)self->ctx;
 
     mock->value = (double)(esp_random() % 1000) / 100.0;
@@ -31,8 +30,7 @@ esp_err_t mock_init(Sensor *self)
     return ESP_OK;
 }
 
-char *mock_read(Sensor *self)
-{
+char *mock_read(Sensor *self) {
     MockSensor *mock = (MockSensor *)self->ctx;
 
     double value_red = mock->value;
@@ -42,8 +40,7 @@ char *mock_read(Sensor *self)
     return mock_format(value_red);
 }
 
-char *mock_format(double value)
-{
+char *mock_format(double value) {
     snprintf(mock_formatted, sizeof(mock_formatted), "m=%.2f", value);
     return mock_formatted;
 }

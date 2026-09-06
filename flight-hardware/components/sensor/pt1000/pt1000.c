@@ -1,12 +1,11 @@
 #include "pt1000.h"
 
 #include <driver/i2c_master.h>
-#include <esp_log.h>
-#include <math.h>
 #include <esp_err.h>
 #include <esp_log.h>
-#include <stdio.h>
 #include <freertos/FreeRTOS.h>
+#include <math.h>
+#include <stdio.h>
 
 ads1115_t ads; // 0-1 PT1000 | 3 PT1000 (more accurate)
 
@@ -70,8 +69,7 @@ char *pt1000_read(Sensor *self) {
     double differential_voltage = get_voltage(&ads, ADS1115_MUX_0_1, ADS1115_FSR_6_144);
     double a3_voltage = get_voltage(&ads, ADS1115_MUX_3_GND, ADS1115_FSR_6_144);
 
-    ESP_LOGI(TAG, "A0-A1 voltage: %.4f V, A3 voltage: %.4f V",
-             differential_voltage, a3_voltage);
+    ESP_LOGI(TAG, "A0-A1 voltage: %.4f V, A3 voltage: %.4f V", differential_voltage, a3_voltage);
 
     return pt1000_format(differential_voltage, a3_voltage);
 }
@@ -88,7 +86,7 @@ double volt_to_temp(double volt) {
 }
 
 char *pt1000_format(double differential_voltage, double a3_voltage) {
-    snprintf(formatted_voltage, sizeof(formatted_voltage),
-             "a0-a1=%.4f,a3=%.4f,t1=%.4f", differential_voltage, a3_voltage, volt_to_temp(a3_voltage));
+    snprintf(formatted_voltage, sizeof(formatted_voltage), "a0-a1=%.4f,a3=%.4f,t1=%.4f", differential_voltage,
+             a3_voltage, volt_to_temp(a3_voltage));
     return formatted_voltage;
 }

@@ -16,14 +16,12 @@ static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PRE
 
 static const char *TAG = "intracom/databus";
 
-Intracom databus = {
-    .init = databus_init,
-    .send = databus_send,
-    .send_timesync = databus_send_timesync,
-    .send_log = databus_send_log,
-    .send_data = databus_send_data,
-    .register_recv_callback = databus_register_recv_callback
-};
+Intracom databus = {.init = databus_init,
+                    .send = databus_send,
+                    .send_timesync = databus_send_timesync,
+                    .send_log = databus_send_log,
+                    .send_data = databus_send_data,
+                    .register_recv_callback = databus_register_recv_callback};
 
 #define ESPNOW_MAXDELAY 512
 

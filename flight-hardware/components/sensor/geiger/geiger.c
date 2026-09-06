@@ -1,8 +1,8 @@
 #include "geiger.h"
 
 #include <esp_err.h>
-#include <esp_timer.h>
 #include <esp_log.h>
+#include <esp_timer.h>
 #include <stdio.h>
 
 #include <driver/gpio.h>
@@ -15,9 +15,7 @@ static const char *TAG = "sensor/geiger";
 static volatile uint64_t pulse_count = 0;
 static char formatted_pulse_count[32];
 
-static void IRAM_ATTR gpio_isr_handler(void *arg) {
-    pulse_count++;
-}
+static void IRAM_ATTR gpio_isr_handler(void *arg) { pulse_count++; }
 
 Sensor geiger = {
     .init = geiger_init,

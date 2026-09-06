@@ -9,8 +9,7 @@
 
 static const char *TAG = "sensor_task";
 
-void sensor_task(void *arg)
-{
+void sensor_task(void *arg) {
     const SensorTaskContext *context = (SensorTaskContext *)arg;
 
     if (context->schedule->sensor == NULL) {
@@ -21,7 +20,8 @@ void sensor_task(void *arg)
     // Initialize the sensor
     esp_err_t err = context->schedule->sensor->init(context->schedule->sensor);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Sensor '%s': Failed to initialize sensor: %s (0x%x)", context->schedule->name, esp_err_to_name(err), err);
+        ESP_LOGE(TAG, "Sensor '%s': Failed to initialize sensor: %s (0x%x)", context->schedule->name,
+                 esp_err_to_name(err), err);
         vTaskDelete(NULL);
     }
     ESP_LOGI(TAG, "Sensor '%s': Initialized successfully", context->schedule->name);
@@ -35,13 +35,13 @@ void sensor_task(void *arg)
 
         esp_err_t err = context->store->save(now, sensor_value);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Sensor '%s': Failed to save data to store: %s (0x%x)",
-                context->schedule->name, esp_err_to_name(err), err);
+            ESP_LOGE(TAG, "Sensor '%s': Failed to save data to store: %s (0x%x)", context->schedule->name,
+                     esp_err_to_name(err), err);
         } else {
             err = context->intracom->send_data(now, sensor_value);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Sensor '%s': Failed to send data via intracom: %s (0x%x)",
-                    context->schedule->name, esp_err_to_name(err), err);
+                ESP_LOGE(TAG, "Sensor '%s': Failed to send data via intracom: %s (0x%x)", context->schedule->name,
+                         esp_err_to_name(err), err);
             }
         }
 

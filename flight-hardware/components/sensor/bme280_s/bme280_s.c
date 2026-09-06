@@ -24,8 +24,7 @@ Sensor bme280_s = {
     .read = bme280_read,
 };
 
-esp_err_t bme280_init(Sensor *self)
-{
+esp_err_t bme280_init(Sensor *self) {
     (void)self;
 
     i2c_config_t config = {
@@ -39,8 +38,7 @@ esp_err_t bme280_init(Sensor *self)
 
     i2c_bus = i2c_bus_create(I2C_PORT, &config);
     if (i2c_bus == NULL) {
-        ESP_LOGE(TAG, "Failed to initialize I2C on SDA %d, SCL %d",
-                 CONFIG_BME280_SDA_PIN, CONFIG_BME280_SCL_PIN);
+        ESP_LOGE(TAG, "Failed to initialize I2C on SDA %d, SCL %d", CONFIG_BME280_SDA_PIN, CONFIG_BME280_SCL_PIN);
         return ESP_FAIL;
     }
 
@@ -59,22 +57,19 @@ esp_err_t bme280_init(Sensor *self)
     return ESP_OK;
 }
 
-char *bme280_read(Sensor *self)
-{
+char *bme280_read(Sensor *self) {
     (void)self;
 
     float temperature = 0.0F;
     float pressure = 0.0F;
     float humidity = 0.0F;
-    if (bme280_read_temperature(sensor, &temperature) != ESP_OK ||
-        bme280_read_pressure(sensor, &pressure) != ESP_OK ||
+    if (bme280_read_temperature(sensor, &temperature) != ESP_OK || bme280_read_pressure(sensor, &pressure) != ESP_OK ||
         bme280_read_humidity(sensor, &humidity) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read BME280");
         return "bme280_error";
     }
 
-    snprintf(formatted_reading, sizeof(formatted_reading),
-             "t2=%.2f,p=%.2f,h=%.2f", temperature, pressure, humidity);
+    snprintf(formatted_reading, sizeof(formatted_reading), "t2=%.2f,p=%.2f,h=%.2f", temperature, pressure, humidity);
     ESP_LOGI(TAG, "BME280 reading: %s", formatted_reading);
 
     return formatted_reading;

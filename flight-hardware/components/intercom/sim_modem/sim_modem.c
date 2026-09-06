@@ -1,15 +1,14 @@
 #include "sim_modem.h"
 
-
 #include <errno.h>
 #include <inttypes.h>
+#include <netdb.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/socket.h>
-#include <netdb.h>
+#include <unistd.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -38,13 +37,11 @@ static bool s_events_registered = false;
 static esp_modem_dce_t *s_dce;
 static esp_netif_t *s_netif;
 
-static void on_ppp_changed(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
-{
+static void on_ppp_changed(void *arg, esp_event_base_t base, int32_t event_id, void *event_data) {
     ESP_LOGI(TAG, "PPP state changed event %" PRId32, event_id);
 }
 
-static void on_ip_event(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
-{
+static void on_ip_event(void *arg, esp_event_base_t base, int32_t event_id, void *event_data) {
     if (event_id == IP_EVENT_PPP_GOT_IP) {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "PPP up, IP: " IPSTR, IP2STR(&event->ip_info.ip));
@@ -57,8 +54,7 @@ static void on_ip_event(void *arg, esp_event_base_t base, int32_t event_id, void
 }
 
 /* Reads one (possibly multi-line) SMTP reply and checks it starts with `expect_code`. */
-static esp_err_t smtp_expect(int sock, int expect_code)
-{
+static esp_err_t smtp_expect(int sock, int expect_code) {
     char buf[512];
     int have_final_line = 0;
     int last_code = 0;
@@ -92,8 +88,7 @@ static esp_err_t smtp_expect(int sock, int expect_code)
     return ESP_OK;
 }
 
-static esp_err_t smtp_send(int sock, const char *fmt, ...)
-{
+static esp_err_t smtp_send(int sock, const char *fmt, ...) {
     char buf[512];
     va_list args;
     va_start(args, fmt);
@@ -113,8 +108,7 @@ static esp_err_t smtp_send(int sock, const char *fmt, ...)
 /* Like smtp_send() but for arbitrary-length data (the aggregated message body can be
  * bigger than smtp_send()'s fixed 512-byte formatting buffer) - writes it as-is,
  * looping over partial send()s. */
-static esp_err_t smtp_send_raw(int sock, const char *data, size_t len)
-{
+static esp_err_t smtp_send_raw(int sock, const char *data, size_t len) {
     size_t sent = 0;
     while (sent < len) {
         int n = send(sock, data + sent, len - sent, 0);
@@ -127,8 +121,7 @@ static esp_err_t smtp_send_raw(int sock, const char *data, size_t len)
     return ESP_OK;
 }
 
-static esp_err_t send_email_once(const char *body, size_t body_len)
-{
+static esp_err_t send_email_once(const char *body, size_t body_len) {
     char port_str[6];
     snprintf(port_str, sizeof(port_str), "%d", CONFIG_MODEM_SMTP_PORT);
 
@@ -150,7 +143,7 @@ static esp_err_t send_email_once(const char *body, size_t body_len)
         return ESP_FAIL;
     }
 
-    struct timeval tv = { .tv_sec = 20 };
+    struct timeval tv = {.tv_sec = 20};
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     esp_err_t err = ESP_FAIL;
@@ -213,8 +206,7 @@ out:
 
 /* Redials if the link dropped, bounded by a timeout - never blocks forever if the
  * cellular network is down. */
-static esp_err_t ensure_connected(void)
-{
+static esp_err_t ensure_connected(void) {
     if (s_ppp_connected) {
         return ESP_OK;
     }
@@ -234,8 +226,7 @@ static esp_err_t ensure_connected(void)
  * loop/handler registration, the event group - is only ever done once; anything
  * per-attempt (netif, dce) is torn down via sim_modem_deinit() before returning on failure
  * so a retry starts from a clean slate instead of leaking a netif/dce each time. */
-esp_err_t sim_modem_init(void)
-{
+esp_err_t sim_modem_init(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     esp_err_t err = esp_event_loop_create_default();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
@@ -305,8 +296,7 @@ esp_err_t sim_modem_init(void)
     return ESP_OK;
 }
 
-esp_err_t sim_modem_deinit(void)
-{
+esp_err_t sim_modem_deinit(void) {
     if (s_dce) {
         esp_modem_destroy(s_dce);
         s_dce = NULL;
@@ -319,8 +309,7 @@ esp_err_t sim_modem_deinit(void)
     return ESP_OK;
 }
 
-esp_err_t sim_modem_send_msg(char *buf, size_t buflen)
-{
+esp_err_t sim_modem_send_msg(char *buf, size_t buflen) {
     if (ensure_connected() != ESP_OK) {
         return ESP_FAIL;
     }

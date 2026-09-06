@@ -38,17 +38,17 @@ esp_err_t status_led_set(Status status) {
     struct color color;
 
     switch (status) {
-        case ERROR:
-            color = RED;
-            break;
-        case WARNING:
-            color = YELLOW;
-            break;
-        case OK:
-            color = GREEN;
-            break;
-        default:
-            return ESP_ERR_INVALID_ARG;
+    case ERROR:
+        color = RED;
+        break;
+    case WARNING:
+        color = YELLOW;
+        break;
+    case OK:
+        color = GREEN;
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_err_t err;
