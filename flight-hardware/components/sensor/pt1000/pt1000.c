@@ -82,7 +82,9 @@ double volt_to_temp(double volt) {
     double b = 64.8344;
     double c = -95.7200;
 
-    return a * volt * volt + b * volt + c;
+    double offset = 0.5755;
+
+    return a * volt * volt + b * volt + c - offset;
 }
 
 char *pt1000_format(double differential_voltage, double a3_voltage) {
