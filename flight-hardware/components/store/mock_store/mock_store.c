@@ -13,7 +13,6 @@ Store mock_store = {
     .init = log_init,
     .deinit = log_deinit,
     .save = log_data,
-    .load = no_read,
 };
 
 esp_err_t log_init(void) {
@@ -32,10 +31,4 @@ esp_err_t log_data(time_t time, char *msg_str) {
     ESP_LOGI(TAG, "Mock store adapter write data: send_time=%llu, message='%s'", (unsigned long long)time, msg_str);
 
     return ESP_OK;
-}
-
-ssize_t no_read(struct databus_message *out_messages, size_t start, size_t count) {
-    ESP_LOGI(TAG, "Mock store adapter does not support loading messages");
-
-    return -1;
 }

@@ -56,8 +56,6 @@ esp_err_t bme280_init(void) {
 }
 
 char *bme280_read(void) {
-    (void)self;
-
     float temperature = 0.0F;
     float pressure = 0.0F;
     float humidity = 0.0F;

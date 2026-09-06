@@ -16,7 +16,6 @@ Store sd_card = {
     .init = sdcard_init,
     .deinit = sdcard_deinit,
     .save = write_data,
-    .load = read_databus_messages,
 };
 
 sdmmc_card_t *card;
@@ -95,53 +94,4 @@ esp_err_t write_data(time_t time, char *msg_str) {
     // ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message='%s'", (unsigned long long)time,
     // DATABUS_MSG_TYPE_DAT, msg_str);
     return ESP_OK;
-}
-
-ssize_t read_databus_messages(struct databus_message *out_messages, size_t start, size_t count) {
-    FILE *data_file = fopen(data_file_path, "r");
-    if (data_file == NULL) {
-        ESP_LOGE(TAG, "Failed to open file for reading");
-        return -1;
-    }
-
-    char line[sizeof(struct databus_message) + 32];
-    size_t line_number = 0;
-    size_t num = 0;
-    while (num < count && fgets(line, sizeof(line), data_file) != NULL) {
-        if (line_number++ < start) {
-            continue;
-        }
-
-        unsigned long long send_time;
-        unsigned int type;
-        char payload[sizeof(out_messages[num].data.message)];
-        if (sscanf(line, "%llu:%u:%219[^\n]", &send_time, &type, payload) != 3) {
-            fclose(data_file);
-            return -1;
-        }
-
-        memset(&out_messages[num], 0, sizeof(out_messages[num]));
-        out_messages[num].send_time = send_time;
-        out_messages[num].type = type;
-        switch (type) {
-        case DATABUS_MSG_TYPE_DAT:
-            strncpy(out_messages[num].data.message, payload, sizeof(out_messages[num].data.message) - 1);
-            break;
-        case DATABUS_MSG_TYPE_LOG:
-            strncpy(out_messages[num].log.message, payload, sizeof(out_messages[num].log.message) - 1);
-            break;
-        case DATABUS_MSG_TYPE_TMS:
-            out_messages[num].timesync.time = strtoull(payload, NULL, 10);
-            break;
-        default:
-            fclose(data_file);
-            return -1;
-        }
-        ++num;
-    }
-
-    fclose(data_file);
-
-    ESP_LOGI(TAG, "Read %zu messages from SD card starting at line %zu", num, start);
-    return (ssize_t)num;
 }

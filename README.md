@@ -47,5 +47,5 @@ components/
 ## TODO
 
 - [ ] intercom send task cleanup
-- [ ] status indicator leds
+- [x] status indicator leds
 - [ ] sensor adapter for BNO055
