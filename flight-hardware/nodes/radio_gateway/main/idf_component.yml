@@ -2,8 +2,6 @@ dependencies:
   idf: ">=5.4.0"
   johannh/databus:
     override_path: "../../../components/intracom/databus/"
-  johannh/sim_modem:
-    override_path: "../../../components/intercom/sim_modem/"
   johannh/log_store:
     override_path: "../../../components/store/log_store/"
   johannh/neo_m8:
