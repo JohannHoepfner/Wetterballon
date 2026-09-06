@@ -28,9 +28,9 @@ const char *databus_get_node_name(NODE_ID node_id) {
 
 int databus_message_to_send(struct databus_message *in_message, struct databus_message *out_message) {
     out_message->send_time = htobe64(in_message->send_time);
-    out_message->type = htobe16(in_message->type);
-    out_message->node_id = htobe16(in_message->node_id);
-    out_message->msg_id = htobe16(in_message->msg_id);
+    out_message->type = in_message->type;
+    out_message->node_id = in_message->node_id;
+    out_message->msg_id = htobe64(in_message->msg_id);
 
     switch (in_message->type) {
     case DATABUS_MSG_TYPE_DATA:
@@ -46,9 +46,9 @@ int databus_message_to_send(struct databus_message *in_message, struct databus_m
 
 int databus_message_from_recv(struct databus_message *in_message, struct databus_message *out_message) {
     out_message->send_time = be64toh(in_message->send_time);
-    out_message->type = be16toh(in_message->type);
-    out_message->node_id = be16toh(in_message->node_id);
-    out_message->msg_id = be16toh(in_message->msg_id);
+    out_message->type = in_message->type;
+    out_message->node_id = in_message->node_id;
+    out_message->msg_id = be64toh(in_message->msg_id);
 
     switch (out_message->type) {
     case DATABUS_MSG_TYPE_DATA:

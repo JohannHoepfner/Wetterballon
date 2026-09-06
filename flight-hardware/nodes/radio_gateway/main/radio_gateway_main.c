@@ -65,12 +65,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_LOG, on_databus_log));
     ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
-
-    // BaseType_t task_created = xTaskCreate(send_task, "sim_modem_send", 4096, NULL, 5, NULL);
-    // if (task_created != pdPASS) {
-    //     ESP_LOGE(TAG, "Failed to create modem send task");
-    // }
-
+    
     Sensor *sensor_gps = &neo_m8;
 
     static SensorSchedule schedules[] = {
