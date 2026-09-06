@@ -34,10 +34,9 @@ void app_main(void)
 
     ESP_ERROR_CHECK(intracom->init());
     ESP_ERROR_CHECK(store->init());
-    ESP_ERROR_CHECK(sensor_mock->init(sensor_mock));
 
     static SensorSchedule schedules[] = {
-        {NULL, pdMS_TO_TICKS(1000)},
+        {'mock', NULL, pdMS_TO_TICKS(1000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 

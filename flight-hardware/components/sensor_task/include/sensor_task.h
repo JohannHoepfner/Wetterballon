@@ -10,6 +10,7 @@
 #include <stddef.h>
 
 typedef struct {
+    char *name;
     Sensor *sensor;
     TickType_t read_interval;
 } SensorSchedule;

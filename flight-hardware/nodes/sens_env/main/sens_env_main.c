@@ -33,25 +33,22 @@ void app_main(void)
     
     Intracom *intracom = &databus;
     Store *store = &log_store;
-    Sensor *sensor_geiger = &geiger;
-    Sensor *sensor_bme280 = &bme280_s;
+    // Sensor *sensor_geiger = &geiger;
+    // Sensor *sensor_bme280 = &bme280_s;
     Sensor *sensor_pt1000 = &pt1000;
 
     ESP_ERROR_CHECK(intracom->init());
     ESP_ERROR_CHECK(store->init());
-    ESP_ERROR_CHECK(sensor_geiger->init(sensor_geiger));
-    ESP_ERROR_CHECK(sensor_bme280->init(sensor_bme280));
-    ESP_ERROR_CHECK(sensor_pt1000->init(sensor_pt1000));
 
     static SensorSchedule schedules[] = {
-        {NULL, pdMS_TO_TICKS(500)},
-        {NULL, pdMS_TO_TICKS(1000)},
-        {NULL, pdMS_TO_TICKS(1000)},
+        {"geiger", NULL, pdMS_TO_TICKS(500)},
+        {"bme280", NULL, pdMS_TO_TICKS(1000)},
+        {"pt1000", NULL, pdMS_TO_TICKS(1000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 
-    schedules[0].sensor = sensor_geiger;
-    schedules[1].sensor = sensor_bme280;
+    // schedules[0].sensor = sensor_geiger;
+    // schedules[1].sensor = sensor_bme280;
     schedules[2].sensor = sensor_pt1000;
 
     SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();
