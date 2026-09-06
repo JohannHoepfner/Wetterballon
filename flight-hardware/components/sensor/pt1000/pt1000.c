@@ -70,14 +70,23 @@ char *pt1000_read(Sensor *self) {
     double differential_voltage = get_voltage(&ads, ADS1115_MUX_0_1, ADS1115_FSR_6_144);
     double a3_voltage = get_voltage(&ads, ADS1115_MUX_3_GND, ADS1115_FSR_6_144);
 
-    ESP_LOGI(TAG, "A0-A1 voltage: %.2f V, A3 voltage: %.2f V",
+    ESP_LOGI(TAG, "A0-A1 voltage: %.4f V, A3 voltage: %.4f V",
              differential_voltage, a3_voltage);
 
     return pt1000_format(differential_voltage, a3_voltage);
 }
 
+double volt_to_temp(double volt) {
+    // Formel mittels Regression aus den Messwerten
+    double a = 12.8283;
+    double b = 64.8344;
+    double c = -95.7200;
+
+    return a * volt * volt + b * volt + c;
+}
+
 char *pt1000_format(double differential_voltage, double a3_voltage) {
     snprintf(formatted_voltage, sizeof(formatted_voltage),
-             "a0_a1=%.2f,a3=%.2f", differential_voltage, a3_voltage);
+             "a0-a1=%.4f,a3=%.4f,t1=%.4f", differential_voltage, a3_voltage, volt_to_temp(a3_voltage));
     return formatted_voltage;
 }
