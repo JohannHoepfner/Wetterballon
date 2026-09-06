@@ -13,14 +13,14 @@
 static const char *TAG = "store/sd_card";
 
 Store sd_card = {
-    .init = sdcard_init,
-    .deinit = sdcard_deinit,
-    .save = write_data,
+    .init = sd_card_init,
+    .deinit = sd_card_deinit,
+    .save = sd_card_write_data,
 };
 
 sdmmc_card_t *card;
 
-esp_err_t sdcard_init(void) {
+esp_err_t sd_card_init(void) {
     esp_err_t err;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -73,25 +73,25 @@ esp_err_t sdcard_init(void) {
     return ESP_OK;
 }
 
-esp_err_t sdcard_deinit() {
+esp_err_t sd_card_deinit() {
     esp_vfs_fat_sdcard_unmount(CONFIG_SD_CARD_MOUNT_POINT, card);
     ESP_LOGI(TAG, "Card unmounted");
     return ESP_OK;
 }
 
 const char *data_file_path = CONFIG_SD_CARD_MOUNT_POINT "/data";
-esp_err_t write_data(time_t time, char *msg_str) {
+esp_err_t sd_card_write_data(time_t time, char *msg_str) {
     FILE *data_file = fopen(data_file_path, "a");
     if (data_file == NULL) {
         ESP_LOGE(TAG, "Failed to open file for writing");
         return ESP_ERR_INVALID_STATE;
     }
 
-    fprintf(data_file, "%llu:%u:%s\n", (unsigned long long)time, DATABUS_MSG_TYPE_DAT, msg_str);
+    fprintf(data_file, "%llu:%s\n", (unsigned long long)time, msg_str);
 
     fclose(data_file);
 
     // ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message='%s'", (unsigned long long)time,
-    // DATABUS_MSG_TYPE_DAT, msg_str);
+    // DATABUS_MSG_TYPE_DATA, msg_str);
     return ESP_OK;
 }

@@ -35,7 +35,7 @@ void app_main(void) {
     Store *store = &mock_store;
     StatusIndicator *status_indicator = &esp_led;
 
-    ESP_ERROR_CHECK(intracom->init());
+    ESP_ERROR_CHECK(intracom->init(NODE_ID_SENS_ENV));
     ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 

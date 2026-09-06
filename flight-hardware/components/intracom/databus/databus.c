@@ -16,8 +16,11 @@ static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PRE
 
 static const char *TAG = "intracom/databus";
 
+uint8_t node_id = 0;
+uint64_t mesage_id_counter = 0;
+
 Intracom databus = {
-    .init = databus_init, .send = databus_send_message, .register_recv_callback = databus_register_recv_callback};
+    .init = databus_init, .send = databus_send_data, .register_recv_callback = databus_register_recv_callback};
 
 #define ESPNOW_MAXDELAY 512
 
@@ -66,12 +69,8 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
     }
 
     switch (msg.type) {
-    case DATABUS_MSG_TYPE_TMS:
-        ESP_LOGI(TAG, "Received timesync message for %lld", (unsigned long long)msg.timesync.time);
-        set_time(msg.timesync.time);
-        break;
-    case DATABUS_MSG_TYPE_DAT:
-        ESP_LOGI(TAG, "Received data message: \"%.*s\"", sizeof(msg.data.message), msg.data.message);
+    case DATABUS_MSG_TYPE_DATA:
+        ESP_LOGI(TAG, "Received data message '%.*s' from '%s' with id %llu", sizeof(msg.data.message), msg.data.message, databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
         for (int i = 0; i < num_data_callbacks; ++i) {
             if (data_callbacks[i] == NULL)
                 continue;
@@ -79,7 +78,7 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
         }
         break;
     case DATABUS_MSG_TYPE_LOG:
-        ESP_LOGI(TAG, "Received log message: \"%.*s\"", sizeof(msg.log.message), msg.log.message);
+        ESP_LOGI(TAG, "Received log message '%.*s' from '%s' with id %llu", sizeof(msg.log.message), msg.log.message, databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
         for (int i = 0; i < num_log_callbacks; ++i) {
             if (log_callbacks[i] == NULL)
                 continue;
@@ -90,11 +89,9 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
         ESP_LOGE(TAG, "Received espnow message with invalid type");
         return;
     }
-
-    ESP_LOGI(TAG, "%s", data);
 }
 
-esp_err_t databus_init(void) {
+esp_err_t databus_init(NODE_ID id) {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
@@ -116,6 +113,9 @@ esp_err_t databus_init(void) {
     memcpy(peer->peer_addr, broadcast_mac, ESP_NOW_ETH_ALEN);
     ESP_ERROR_CHECK(esp_now_add_peer(peer));
     free(peer);
+
+    node_id = id;
+    ESP_LOGI(TAG, "Initializing databus with node ID: %llu", (unsigned long long)id);
     return ESP_OK;
 }
 
@@ -126,15 +126,16 @@ esp_err_t databus_send(struct databus_message *msg) {
     return esp_now_send(broadcast_mac, (const uint8_t *)msg_buf, sizeof(msg_buf));
 }
 
-esp_err_t databus_send_message(time_t time, char *msg_str) {
-    struct databus_message msg = {.send_time = time, .type = DATABUS_MSG_TYPE_DAT};
+esp_err_t databus_send_data(time_t time, char *msg_str) {
+    struct databus_message msg = {
+        .send_time = time, .type = DATABUS_MSG_TYPE_DATA, .node_id = node_id, .msg_id = mesage_id_counter++};
     strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
     return databus_send(&msg);
 }
 
 esp_err_t databus_register_recv_callback(uint64_t message_type, void (*callback)(struct databus_message *)) {
     switch (message_type) {
-    case DATABUS_MSG_TYPE_DAT:
+    case DATABUS_MSG_TYPE_DATA:
         data_callbacks[num_data_callbacks] = callback;
         num_data_callbacks++;
         break;

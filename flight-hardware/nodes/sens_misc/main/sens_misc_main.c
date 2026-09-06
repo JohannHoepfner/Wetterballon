@@ -1,8 +1,10 @@
 #include "databus.h"
-#include "esp_led.h"
-#include "mock.h"
 #include "mock_store.h"
+#include "mock.h"
+#include "pt1000.h"
+#include "sd_card.h"
 #include "sensor_task.h"
+#include "esp_led.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -15,7 +17,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-static const char *TAG = "node/sens_mock";
+static const char *TAG = "node/sens_misc";
 
 void app_main(void) {
     ESP_LOGI(TAG, "init");
@@ -31,19 +33,24 @@ void app_main(void) {
     Store *store = &mock_store;
     StatusIndicator *status_indicator = &esp_led;
 
-    ESP_ERROR_CHECK(intracom->init(NODE_ID_SENS_MOCK));
+    ESP_ERROR_CHECK(intracom->init(NODE_ID_SENS_MISC));
     ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
-    Sensor *sensor_mock = &mock;
+    // Sensor *sensor_bmo055 = &bmo055;
+    Sensor *sensor_pt1000 = &pt1000;
 
     static SensorSchedule schedules[] = {
-        {"mock", NULL, NULL, pdMS_TO_TICKS(1000)},
+        {"pt1000", NULL, NULL, pdMS_TO_TICKS(1000)},
+        {"bmo055", NULL, NULL, pdMS_TO_TICKS(1000)},
     };
     static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
 
-    schedules[0].sensor = sensor_mock;
     schedules[0].status_indicator = status_indicator;
+    schedules[0].sensor = sensor_pt1000;
+
+    schedules[1].status_indicator = status_indicator;
+    // schedules[1].sensor = sensor_bmo055;
 
     SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();
     if (output_mutex == NULL) {

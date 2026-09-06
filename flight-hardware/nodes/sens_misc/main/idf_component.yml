@@ -1,0 +1,16 @@
+dependencies:
+  idf: ">=5.4.0"
+  johannh/databus:
+    override_path: "../../../components/intracom/databus/"
+  johannh/mock:
+    override_path: "../../../components/sensor/mock/"
+  johannh/pt1000:
+    override_path: "../../../components/sensor/pt1000/"
+  johannh/sd_card:
+    override_path: "../../../components/store/sd_card/"
+  johannh/mock_store:
+    override_path: "../../../components/store/mock_store/"
+  johannh/sensor_task:
+    override_path: "../../../components/sensor_task/"
+  johannh/esp_led:
+    override_path: "../../../components/status_indicator/esp_led/"

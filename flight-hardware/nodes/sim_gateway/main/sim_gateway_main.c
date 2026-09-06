@@ -8,14 +8,12 @@
 
 #include "databus.h"
 #include "esp_log.h"
-#include "mock_store.h"
-#include "neo_m8.h"
+#include "sd_card.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
-#include "sensor_task.h"
 #include "esp_led.h"
 
-static const char *TAG = "node/radio_gateway";
+static const char *TAG = "node/sim_gateway";
 
 #define AGG_BUF_SIZE 4096
 
@@ -57,10 +55,10 @@ void app_main(void) {
     ESP_ERROR_CHECK(nvs_err);
 
     Intracom *intracom = &databus;
-    Store *store = &mock_store;
+    Store *store = &sd_card;
     StatusIndicator *status_indicator = &esp_led;
 
-    ESP_ERROR_CHECK(intracom->init(NODE_ID_RADIO_GATEWAY));
+    ESP_ERROR_CHECK(intracom->init(NODE_ID_SIM_GATEWAY));
     ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_LOG, on_databus_log));
     ESP_ERROR_CHECK(store->init());
@@ -70,33 +68,4 @@ void app_main(void) {
     // if (task_created != pdPASS) {
     //     ESP_LOGE(TAG, "Failed to create modem send task");
     // }
-
-    Sensor *sensor_gps = &neo_m8;
-
-    static SensorSchedule schedules[] = {
-        {"gps", NULL, NULL, pdMS_TO_TICKS(3000)},
-    };
-    static SensorTaskContext task_contexts[sizeof(schedules) / sizeof(schedules[0])];
-
-    schedules[0].status_indicator = status_indicator;
-    schedules[0].sensor = sensor_gps;
-
-    SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();
-    if (output_mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create sensor output mutex");
-        return;
-    }
-
-    for (size_t i = 0; i < sizeof(schedules) / sizeof(schedules[0]); ++i) {
-        task_contexts[i] = (SensorTaskContext){
-            .schedule = &schedules[i],
-            .intracom = intracom,
-            .store = store,
-            .output_mutex = output_mutex,
-        };
-        BaseType_t task_created = xTaskCreate(sensor_task, "sensor_read", 4096, &task_contexts[i], 5, NULL);
-        if (task_created != pdPASS) {
-            ESP_LOGE(TAG, "Failed to create task for sensor %zu", i);
-        }
-    }
 }
