@@ -37,9 +37,9 @@ void app_main(void) {
 
         // time_t now_time;
         // time(&now_time);
-        // esp_err_t err = databus_send_data(now_time, buf);
+        // esp_err_t err = databus_send_message(now_time, buf);
         // if (err != ESP_OK) {
-        //     ESP_LOGE(TAG, "databus_send_data failed with %d %s", err, esp_err_to_name(err));
+        //     ESP_LOGE(TAG, "databus_send_message failed with %d %s", err, esp_err_to_name(err));
         //     return;
         // }
     }

@@ -16,12 +16,8 @@ static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PRE
 
 static const char *TAG = "intracom/databus";
 
-Intracom databus = {.init = databus_init,
-                    .send = databus_send,
-                    .send_timesync = databus_send_timesync,
-                    .send_log = databus_send_log,
-                    .send_data = databus_send_data,
-                    .register_recv_callback = databus_register_recv_callback};
+Intracom databus = {
+    .init = databus_init, .send = databus_send_message, .register_recv_callback = databus_register_recv_callback};
 
 #define ESPNOW_MAXDELAY 512
 
@@ -130,18 +126,7 @@ esp_err_t databus_send(struct databus_message *msg) {
     return esp_now_send(broadcast_mac, (const uint8_t *)msg_buf, sizeof(msg_buf));
 }
 
-esp_err_t databus_send_timesync(time_t time) {
-    struct databus_message msg = {.send_time = time, .type = DATABUS_MSG_TYPE_TMS, {.timesync = {time}}};
-    return databus_send(&msg);
-}
-
-esp_err_t databus_send_log(time_t time, char *msg_str) {
-    struct databus_message msg = {.send_time = time, .type = DATABUS_MSG_TYPE_LOG};
-    strncpy((char *)msg.log.message, msg_str, sizeof(msg.log.message));
-    return databus_send(&msg);
-}
-
-esp_err_t databus_send_data(time_t time, char *msg_str) {
+esp_err_t databus_send_message(time_t time, char *msg_str) {
     struct databus_message msg = {.send_time = time, .type = DATABUS_MSG_TYPE_DAT};
     strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
     return databus_send(&msg);

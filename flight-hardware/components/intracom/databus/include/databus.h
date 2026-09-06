@@ -8,9 +8,7 @@
 
 esp_err_t databus_init(void);
 esp_err_t databus_send(struct databus_message *msg);
-esp_err_t databus_send_timesync(time_t time);
-esp_err_t databus_send_data(time_t send_time, char *msg_str);
-esp_err_t databus_send_log(time_t send_time, char *msg_str);
+esp_err_t databus_send_message(time_t send_time, char *msg_str);
 esp_err_t databus_register_recv_callback(uint64_t message_type, void (*callback)(struct databus_message *));
 
 extern Intracom databus;

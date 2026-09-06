@@ -60,7 +60,7 @@ void sensor_task(void *arg) {
                 context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
             }
         } else {
-            err = context->intracom->send_data(now, sensor_value);
+            err = context->intracom->send(now, sensor_value);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Sensor '%s': Failed to send data via intracom: %s (0x%x)", context->schedule->name,
                          esp_err_to_name(err), err);
