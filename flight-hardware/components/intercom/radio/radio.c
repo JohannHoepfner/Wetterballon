@@ -10,6 +10,7 @@
 #include <freertos/event_groups.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "radio.h"
 #include "radio_frame.h"
 #include "rtty.h"
@@ -30,6 +31,101 @@ void amp_enable() {
 }
 void amp_disable() {
     gpio_set_level(CONFIG_RADIO_AMP_PWK, 1);
+}
+
+
+#define FSK_XTAL_HZ  25000000LL   /* must match the value passed to si5351_init() */
+#define FSK_CORR_PPB 0            /* your measured calibration, parts per billion */
+#define FSK_FRAC_C   1048575UL    /* max fractional denominator (2^20 - 1)        */
+#define SI5351_PLLA_REGS 26
+
+typedef struct { uint8_t r[8]; } pll_regs_t;   /* registers 26..33 */
+
+static pll_regs_t reg_mark, reg_space;
+static i2c_master_dev_handle_t fsk_dev;
+static uint8_t oeb_shadow;                     /* cached register 3 */
+
+static void pll_regs_for(uint64_t fvco, pll_regs_t *out) {
+    const int64_t fx = FSK_XTAL_HZ + (FSK_XTAL_HZ * FSK_CORR_PPB) / 1000000000LL;
+
+    uint32_t a   = (uint32_t)(fvco / (uint64_t)fx);
+    uint64_t rem = fvco % (uint64_t)fx;
+    uint32_t c   = FSK_FRAC_C;
+    uint32_t b   = (uint32_t)((rem * c + fx / 2) / fx);   /* rounded, not truncated */
+
+    uint32_t f  = (uint32_t)((128ULL * b) / c);
+    uint32_t p1 = 128 * a + f - 512;
+    uint32_t p2 = (uint32_t)(128ULL * b - (uint64_t)c * f);
+    uint32_t p3 = c;
+
+    out->r[0] = (p3 >> 8) & 0xFF;
+    out->r[1] = p3 & 0xFF;
+    out->r[2] = (p1 >> 16) & 0x03;
+    out->r[3] = (p1 >> 8) & 0xFF;
+    out->r[4] = p1 & 0xFF;
+    out->r[5] = ((p3 >> 12) & 0xF0) | ((p2 >> 16) & 0x0F);
+    out->r[6] = (p2 >> 8) & 0xFF;
+    out->r[7] = p2 & 0xFF;
+}
+
+static esp_err_t fsk_setup(void) {
+    const uint64_t f_space = CONFIG_RADIO_FREQ_BASE;
+    const uint64_t f_mark  = CONFIG_RADIO_FREQ_BASE + CONFIG_RADIO_FREQ_SHIFT;
+
+    /* Largest even output divider keeping the VCO inside 600..900 MHz. */
+    uint32_t d = (uint32_t)(900000000ULL / f_mark);
+    if (d & 1u) d--;
+    if (d < 6 || d > 900 || f_space * d < 600000000ULL) {
+        ESP_LOGE(TAG, "no usable multisynth divider for %llu Hz", f_space);
+        return ESP_ERR_INVALID_ARG;   /* >150 MHz needs DIVBY4, <1 MHz needs an R divider */
+    }
+
+    pll_regs_for(f_space * d, &reg_space);
+    pll_regs_for(f_mark  * d, &reg_mark);
+
+    /* Program the multisynth exactly once, PLL parked on the space tone. */
+    si5351_set_freq_manual(&si5351_dev,
+                           f_space * SI5351_FREQ_MULT,
+                           f_space * d * SI5351_FREQ_MULT,
+                           SI5351_CLK0);
+    si5351_set_int(&si5351_dev, SI5351_CLK0, 1);   /* MS is an even integer -> less jitter */
+    si5351_pll_reset(&si5351_dev, SI5351_PLLA);
+    si5351_output_enable(&si5351_dev, SI5351_CLK0, false);
+
+    ESP_LOGI(TAG, "MS divider %lu, tuning step %.2f Hz",
+             (unsigned long)d, (double)FSK_XTAL_HZ / ((double)FSK_FRAC_C * d));
+    return ESP_OK;
+}
+
+static i2c_master_dev_handle_t fsk_dev;
+
+static esp_err_t fsk_open(void) {
+    esp_err_t e = i2c_master_bus_add_device(si5351_dev.i2c_dev.i2c_bus_handle,
+                                            &si5351_dev.i2c_dev.i2c_dev_conf, &fsk_dev);
+    if (e != ESP_OK) return e;
+    uint8_t addr = 3;
+    return i2c_master_transmit_receive(fsk_dev, &addr, 1, &oeb_shadow, 1,
+                                       SI5351_I2C_TIMEOUT_MS);
+}
+
+static void fsk_close(void) {
+    i2c_master_bus_rm_device(fsk_dev);
+    fsk_dev = NULL;
+}
+
+static inline esp_err_t fsk_tone(bool mark) {
+    uint8_t buf[9];
+    buf[0] = SI5351_PLLA_REGS;
+    memcpy(&buf[1], mark ? reg_mark.r : reg_space.r, 8);
+    return i2c_master_transmit(fsk_dev, buf, sizeof(buf), SI5351_I2C_TIMEOUT_MS);
+}
+
+static esp_err_t fsk_output(bool on) {
+    uint8_t v = on ? (uint8_t)(oeb_shadow & ~1u) : (uint8_t)(oeb_shadow | 1u);
+    uint8_t buf[2] = { 3, v };
+    esp_err_t e = i2c_master_transmit(fsk_dev, buf, 2, SI5351_I2C_TIMEOUT_MS);
+    if (e == ESP_OK) oeb_shadow = v;
+    return e;
 }
 
 esp_err_t radio_init(void) {
@@ -56,12 +152,12 @@ esp_err_t radio_init(void) {
 
     si5351_drive_strength(&si5351_dev, SI5351_CLK0, SI5351_DRIVE_2MA);
 
+    fsk_setup();
+
     return ESP_OK;
 }
 
 esp_err_t radio_deinit(void) { return ESP_OK; }
-
-static long last_freq = -1;
 
 static int64_t next_bit_us;
 
@@ -69,15 +165,16 @@ static void wait_until(int64_t deadline) {
     while (deadline - esp_timer_get_time() > 2 * portTICK_PERIOD_MS * 1000) {
         vTaskDelay(1);
     }
-    while (esp_timer_get_time() < deadline) { /* spin */ }
+    while (esp_timer_get_time() < deadline) { }
 }
 
+static int last_tone = -1;
+
 static esp_err_t _radio_send_bit(bool bit) {
-    long freq = CONFIG_RADIO_FREQ_BASE + (bit ? CONFIG_RADIO_FREQ_SHIFT : 0);
     wait_until(next_bit_us);
-    if (last_freq != freq) {
-        si5351_set_freq(&si5351_dev, (uint64_t)freq * SI5351_FREQ_MULT, SI5351_CLK0);
-        last_freq = freq;
+    if (last_tone != (int)bit) {
+        fsk_tone(bit);
+        last_tone = bit;
     }
     next_bit_us += CONFIG_RADIO_BIT_US;
     return ESP_OK;
@@ -101,31 +198,34 @@ static esp_err_t _radio_send_symbol(uint8_t symbol) {
     return ESP_OK;
 }
 
-/* Keys out an already encoded frame (ITA2 symbols, one per char). */
 esp_err_t radio_send_frame(const radio_frame *frame) {
-    if (frame == NULL || frame->content == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    if (frame == NULL || frame->content == NULL) return ESP_ERR_INVALID_ARG;
 
     amp_enable();
-    si5351_output_enable(&si5351_dev, SI5351_CLK0, true);
-    usleep(200 * 1000);
+    usleep(100 * 1000);
 
-    /* Idle mark so the receiver's AGC/decoder can settle before the first start bit */
-    _radio_send_bit(true);
-    usleep(180 * 1000);
+    if (fsk_open() != ESP_OK) { amp_disable(); return ESP_FAIL; }
 
-    for (size_t i = 0; i < frame->len; ++i) {
+    fsk_tone(true);            /* park on mark before the carrier comes up */
+    last_tone = 1;
+    fsk_output(true);
+
+    next_bit_us = esp_timer_get_time() + 1000 * 1000;   /* 1 s steady mark */
+
+    for (size_t i = 0; i < frame->len; ++i)
         _radio_send_symbol((uint8_t)frame->content[i]);
-    }
 
-    si5351_output_enable(&si5351_dev, SI5351_CLK0, false);
-    usleep(200 * 1000);
+    wait_until(next_bit_us + 200 * 1000);
+    fsk_output(false);
+    fsk_close();
+
+    usleep(100 * 1000);
     amp_disable();
     return ESP_OK;
 }
 
 esp_err_t radio_send_msg(char *buf, size_t buflen) {
+    ESP_LOGI(TAG, "sending %x chars %s", buflen, buf);
     radio_frame frame = radio_encode_frame(buf, buflen, true);
     if (frame.content == NULL) {
         ESP_LOGE(TAG, "could not allocate frame for %u byte message", (unsigned)buflen);

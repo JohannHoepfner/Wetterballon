@@ -58,7 +58,7 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
         second = localtime(&now)->tm_sec;
     }
 
-    snprintf(buffer, buffer_size, "%02d%02d%02.0f, ,%.4f,%.4f,%05.0fm,%.0f°C", hour, minute, second, context->latitude,
+    snprintf(buffer, buffer_size, "%02d%02d%02.0f,%.4f,%.4f,%05.0fm,%.0f", hour, minute, second, context->latitude,
              context->longitude, context->altitude, context->temperature);
 }
 

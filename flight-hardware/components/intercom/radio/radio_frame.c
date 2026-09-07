@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-static const char *prefix = "DA0FRA HIGH ALTITUDE BALLOON ";
-static const size_t prefix_len = 29;
-static const char *postfix = " DA0FRA";
-static const size_t postfix_len = 7;
+static const char prefix[] = "DA0FRA HIGH ALTITUDE BALLOON ";
+static const size_t prefix_len = sizeof(prefix) - 1;
+static const char postfix[] = " DA0FRA";
+static const size_t postfix_len = sizeof(postfix) - 1;
 
 typedef struct {
     size_t len;
