@@ -1,15 +1,15 @@
 menu "Sim7600 modem config"
     config MODEM_UART_TX_PIN
         int "Modem UART TXD pin"
-        default 25
+        default 20
 
     config MODEM_UART_RX_PIN
         int "Modem UART RXD pin"
-        default 26
+        default 21
 
     config MODEM_UART_RTS_PIN
         int "Modem UART RTS pin"
-        default 27
+        default 22
 
     config MODEM_UART_CTS_PIN
         int "Modem UART CTS pin"
