@@ -17,7 +17,27 @@ static char gps_formatted[64];
 Sensor neo_m8 = {
     .init = neo_m8_init,
     .read = neo_m8_read,
+    .on_receive = neo_m8_on_receive,
 };
+
+#define NEO_M8_MAX_CALLBACKS 32
+
+static sensor_callback_t callbacks[NEO_M8_MAX_CALLBACKS];
+static size_t callback_count;
+
+esp_err_t neo_m8_on_receive(sensor_callback_t callback) {
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (callback_count >= NEO_M8_MAX_CALLBACKS) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    callbacks[callback_count++] = callback;
+
+    return ESP_OK;
+}
 
 esp_err_t neo_m8_init(void) {
     esp_err_t err = gps_init();
@@ -53,7 +73,13 @@ char *neo_m8_read(void) {
         }
     }
 
-    return gps_format(latitude, longitude, altitude, hour, minute, second, valid);
+    char *formatted_gps = gps_format(latitude, longitude, altitude, hour, minute, second, valid);
+
+    for (size_t i = 0; i < callback_count; i++) {
+        callbacks[i](formatted_gps);
+    }
+
+    return formatted_gps;
 }
 
 char *gps_format(double latitude, double longitude, double altitude, int hour, int minute, float second, bool valid) {

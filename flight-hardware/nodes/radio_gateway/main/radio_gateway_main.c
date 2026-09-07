@@ -27,7 +27,6 @@ StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_gps = &neo_m8;
 
 #define TELEMETRY_BODY_SIZE 256
-
 typedef struct {
     bool valid_time;
 
@@ -41,10 +40,8 @@ typedef struct {
 
     float temperature;
 } TelemetryContext;
-
 static TelemetryContext *s_telemetry_context;
 static IntercomTaskStatus s_telemetry_status;
-
 static char s_telemetry_status_value[TELEMETRY_BODY_SIZE];
 static char s_intercom_body[TELEMETRY_BODY_SIZE];
 
@@ -65,6 +62,49 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
              context->longitude, context->altitude, context->temperature);
 }
 
+static void on_gps_data(const char *gps_data) {
+    if (gps_data == NULL || s_telemetry_context == NULL || strstr(gps_data, "invalid") != NULL) {
+        return;
+    }
+
+    double new_latitude, new_longitude;
+    float new_altitude;
+    int new_hour, new_minute;
+    float new_second;
+
+    int parsed = sscanf(gps_data, "lat=%lf,lon=%lf,alt=%f,utc=%d:%d:%f", &new_latitude, &new_longitude, &new_altitude,
+                        &new_hour, &new_minute, &new_second);
+
+    if (parsed != 6) {
+        ESP_LOGW(TAG, "Failed to parse GPS data: %s", gps_data);
+        return;
+    }
+
+    if (new_latitude < -90.0 || new_latitude > 90.0 || new_longitude < -180.0 || new_longitude > 180.0 ||
+        new_hour < 0 || new_hour > 23 || new_minute < 0 || new_minute > 59 || new_second < 0.0f ||
+        new_second >= 60.0f) {
+        ESP_LOGW(TAG, "Invalid GPS values: %s", gps_data);
+        return;
+    }
+
+    xSemaphoreTake(s_telemetry_status.mutex, portMAX_DELAY);
+
+    s_telemetry_context->latitude = new_latitude;
+    s_telemetry_context->longitude = new_longitude;
+    s_telemetry_context->altitude = new_altitude;
+    s_telemetry_context->hour = new_hour;
+    s_telemetry_context->minute = new_minute;
+    s_telemetry_context->second = new_second;
+
+    s_telemetry_context->valid_time = true;
+
+    format_telemetry_body(s_telemetry_context, s_telemetry_status.value, s_telemetry_status.value_size);
+
+    xSemaphoreGive(s_telemetry_status.mutex);
+
+    return;
+}
+
 static void on_databus_data(struct databus_message *message) {
     if (message == NULL) {
         ESP_LOGE(TAG, "Invalid databus message");
@@ -79,6 +119,11 @@ static void on_databus_data(struct databus_message *message) {
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
         }
+    }
+
+    // Filter out messages, that can't be used for telemetry status update
+    if (message->node_id != NODE_ID_SENS_MISC) {
+        return;
     }
 
     float new_temperature = 0.0f;
@@ -102,6 +147,8 @@ static void on_databus_data(struct databus_message *message) {
     format_telemetry_body(s_telemetry_context, s_telemetry_status.value, s_telemetry_status.value_size);
 
     xSemaphoreGive(s_telemetry_status.mutex);
+
+    return;
 }
 
 void app_main(void) {
@@ -142,6 +189,7 @@ void app_main(void) {
     s_telemetry_context = &telemetry_context;
 
     // Hook up databus receive callback to update telemetry status
+    ESP_ERROR_CHECK(sensor_gps->on_receive(on_gps_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
 
     // Set up intercom task to send last telemetry status periodically via intercom
