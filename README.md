@@ -47,6 +47,7 @@ components/
 
 ## TODO
 
-- [ ] intercom send task cleanup
+- [x] intercom send task cleanup
 - [x] status indicator leds
+- [ ] cell_gateway read 
 - [ ] sensor adapter for BNO055

@@ -21,7 +21,7 @@ static void set_status(void *context, const char *value) {
     xSemaphoreGive(status->mutex);
 }
 
-IntercomStatusHandler intercom_task_status_handler(IntercomTaskContext *context) {
+IntercomStatusHandler INTERCOM_TASK_MODE_TELEMETRY_handler(IntercomTaskContext *context) {
     return (IntercomStatusHandler){
         .set = set_status,
         .context = context == NULL ? NULL : context->source.status,
@@ -50,7 +50,7 @@ void intercom_task(void *arg) {
         size_t body_len = 0;
         esp_err_t read_err = ESP_OK;
 
-        if (context->mode == INTERCOM_TASK_STATUS) {
+        if (context->mode == INTERCOM_TASK_MODE_TELEMETRY) {
             if (context->source.status == NULL || context->source.status->mutex == NULL ||
                 context->source.status->value == NULL) {
                 ESP_LOGE(TAG, "Invalid intercom status context");
@@ -62,7 +62,7 @@ void intercom_task(void *arg) {
             memcpy(context->body, context->source.status->value, body_len);
             context->body[body_len] = '\0';
             xSemaphoreGive(context->source.status->mutex);
-        } else if (context->mode == INTERCOM_TASK_SD_CARD) {
+        } else if (context->mode == INTERCOM_TASK_MODE_SD_CARD) {
             if (context->source.sd_card.store == NULL || context->source.sd_card.store->read_lines == NULL ||
                 context->source.sd_card.store->acknowledge_lines == NULL || context->source.sd_card.lines_per_send == 0) {
                 ESP_LOGE(TAG, "Invalid intercom SD-card context");
@@ -88,7 +88,7 @@ void intercom_task(void *arg) {
         esp_err_t err = read_err == ESP_OK ? context->intercom->send(context->body, body_len) : read_err;
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Sending email failed, will retry next cycle (messages stay queued)");
-        } else if (context->mode == INTERCOM_TASK_SD_CARD && lines_read > 0) {
+        } else if (context->mode == INTERCOM_TASK_MODE_SD_CARD && lines_read > 0) {
             err = context->source.sd_card.store->acknowledge_lines(lines_read);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to advance SD-card read position: %s", esp_err_to_name(err));

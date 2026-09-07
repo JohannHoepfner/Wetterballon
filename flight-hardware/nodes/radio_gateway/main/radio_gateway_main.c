@@ -195,7 +195,7 @@ void app_main(void) {
     // Set up intercom task to send last telemetry status periodically via intercom
     static IntercomTaskContext intercom_context;
     intercom_context = (IntercomTaskContext){
-        .mode = INTERCOM_TASK_STATUS,
+        .mode = INTERCOM_TASK_MODE_TELEMETRY,
         .intercom = intercom,
         .body = s_intercom_body,
         .body_size = sizeof(s_intercom_body),

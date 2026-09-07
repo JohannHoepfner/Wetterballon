@@ -11,8 +11,8 @@
 #include <stddef.h>
 
 typedef enum {
-	INTERCOM_TASK_STATUS,
-	INTERCOM_TASK_SD_CARD,
+	INTERCOM_TASK_MODE_TELEMETRY, // Uses a telemetry context which is updated and sent periodically
+	INTERCOM_TASK_MODE_SD_CARD, // Reads lines from SD card and sends them via intercom
 } IntercomTaskMode;
 
 typedef struct {
@@ -41,5 +41,5 @@ typedef struct {
     TickType_t send_interval;
 } IntercomTaskContext;
 
-IntercomStatusHandler intercom_task_status_handler(IntercomTaskContext *context);
+IntercomStatusHandler INTERCOM_TASK_MODE_TELEMETRY_handler(IntercomTaskContext *context);
 void intercom_task(void *arg);
