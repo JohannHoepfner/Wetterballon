@@ -54,11 +54,13 @@ void app_main(void) {
 
     // Initialize central adapters
     ESP_ERROR_CHECK(intercom->init());
-    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
     ESP_ERROR_CHECK(store->init());
+    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
+
+    status_indicator->set_status(status_indicator, OK);
 
     // Set up intercom task to send data from sd card via intercom
     // TODO

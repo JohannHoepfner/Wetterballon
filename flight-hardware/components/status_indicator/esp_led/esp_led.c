@@ -53,8 +53,6 @@ esp_err_t esp_led_init(StatusIndicator *self) {
         return err;
     }
 
-    esp_led_set(self, OK);
-
     ESP_LOGI(TAG, "LED initialized successfully");
 
     return ESP_OK;

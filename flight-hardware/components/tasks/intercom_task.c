@@ -37,14 +37,6 @@ void intercom_task(void *arg) {
         return;
     }
 
-    int backoff_sec = 5;
-    while (context->intercom->init() != ESP_OK) {
-        ESP_LOGE(TAG, "Intercom initialization failed, retrying in %d s", backoff_sec);
-        vTaskDelay(pdMS_TO_TICKS(backoff_sec * 1000));
-        backoff_sec = backoff_sec < 300 ? backoff_sec * 2 : 300;
-    }
-    ESP_LOGI(TAG, "Intercom ready");
-
     while (true) {
         size_t lines_read = 0;
         size_t body_len = 0;
