@@ -23,7 +23,7 @@ void sensor_task(void *arg) {
     }
 
     if (context->schedule->sensor == NULL) {
-        ESP_LOGE(TAG, "Sensor '%s': No adapter defined", context->schedule->name);
+        ESP_LOGE(TAG, "Sensor '%s': No adapter defined, stopping sensor task", context->schedule->name);
         if (context->schedule->status_indicator != NULL) {
             context->schedule->status_indicator->set_status(context->schedule->status_indicator, UNRECOVERABLE_ERROR);
         }
@@ -36,6 +36,7 @@ void sensor_task(void *arg) {
     }
 
     // Initialize the sensor
+    ESP_LOGI(TAG, "Sensor '%s': Initializing...", context->schedule->name);
     esp_err_t err = context->schedule->sensor->init();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Sensor '%s': Failed to initialize sensor: %s (0x%x)", context->schedule->name,

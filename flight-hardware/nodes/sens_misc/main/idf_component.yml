@@ -6,8 +6,6 @@ dependencies:
     override_path: ../../../components/sensor/mock/
   johannh/pt1000:
     override_path: ../../../components/sensor/pt1000/
-  johannh/bno055_s:
-    override_path: ../../../components/sensor/bno055_s/
   johannh/sd_card:
     override_path: ../../../components/store/sd_card/
   johannh/mock_store:
@@ -16,4 +14,3 @@ dependencies:
     override_path: ../../../components/tasks/
   johannh/esp_led:
     override_path: ../../../components/status_indicator/esp_led/
-  adithya-187326/bno055: ^1.0.1
