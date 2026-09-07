@@ -184,6 +184,13 @@ static void on_databus_data(struct databus_message *message) {
     return;
 }
 
+static IntercomTaskContext intercom_context;
+
+static void on_databus_kill_radio(struct databus_message *message) {
+    ESP_LOGE(TAG,"radio star was murdered.");
+    intercom_context.intercom = NULL;
+}
+
 void app_main(void) {
     // Initialize NVS
     esp_err_t nvs_err = nvs_flash_init();
@@ -226,25 +233,24 @@ void app_main(void) {
     // Hook up databus receive callback to update telemetry status
     ESP_ERROR_CHECK(sensor_gps->on_receive(on_gps_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR, on_databus_kill_radio));
 
     // Set up intercom task to send last telemetry status periodically via intercom
-    static IntercomTaskContext intercom_context;
-    intercom_context = (IntercomTaskContext){
-        .mode = INTERCOM_TASK_MODE_TELEMETRY,
-        .intercom = intercom,
-        .body = s_intercom_body,
-        .body_size = sizeof(s_intercom_body),
-        .source.status = &s_telemetry_status,
-        .send_interval = pdMS_TO_TICKS(5000),
-        .status_indicator = status_indicator,
-    };
-    // BaseType_t intercom_task_created =
-    //     xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context, 5, NULL);
-    // if (intercom_task_created != pdPASS) {
-    //     ESP_LOGE(TAG, "Failed to create intercom task");
-    //     status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
-    //     return;
-    // }
+    intercom_context.mode = INTERCOM_TASK_MODE_TELEMETRY;
+    intercom_context.intercom = intercom;
+    intercom_context.body = s_intercom_body;
+    intercom_context.body_size = sizeof(s_intercom_body);
+    intercom_context.source.status = &s_telemetry_status;
+    intercom_context.send_interval = pdMS_TO_TICKS(5000);
+    intercom_context.status_indicator = status_indicator;
+
+    BaseType_t intercom_task_created =
+        xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context, 5, NULL);
+    if (intercom_task_created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create intercom task");
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
+        return;
+    }
 
     // Initialize sensor tasks
     static SensorSchedule schedules[] = {

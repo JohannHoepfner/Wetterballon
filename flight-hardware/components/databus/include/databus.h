@@ -14,6 +14,7 @@ struct Databus {
 	esp_err_t (*send_timesync)(time_t time);
 	esp_err_t (*on_receive)(uint64_t message_type, DatabusReceiveHandler handler);
 	esp_err_t (*reinit)(void);
+	int radio_killed;
 };
 
 esp_err_t databus_reinit(void);

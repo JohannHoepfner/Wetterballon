@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "databus.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
@@ -53,8 +55,22 @@ static void on_ip_event(void *arg, esp_event_base_t base, int32_t event_id, void
     }
 }
 
-/* Reads one (possibly multi-line) SMTP reply and checks it starts with `expect_code`. */
-static esp_err_t smtp_expect(int sock, int expect_code) {
+static void parse_size_ext(const char *line, size_t *max_size) {
+    if (strncasecmp(line + 4, "SIZE", 4) != 0) {
+        return;
+    }
+    const char *p = line + 8;
+    while (*p == ' ') {
+        p++;
+    }
+    char *end;
+    unsigned long long v = strtoull(p, &end, 10);
+    if (end != p) {
+        *max_size = (size_t)v;
+    }
+}
+
+static esp_err_t smtp_expect_ex(int sock, int expect_code, size_t *advertised_size) {
     char buf[512];
     int have_final_line = 0;
     int last_code = 0;
@@ -74,6 +90,9 @@ static esp_err_t smtp_expect(int sock, int expect_code) {
                 break;
             }
             last_code = (line[0] - '0') * 100 + (line[1] - '0') * 10 + (line[2] - '0');
+            if (advertised_size && last_code == 250) {
+                parse_size_ext(line, advertised_size);
+            }
             /* "nnn " ends a (possibly multi-line) reply, "nnn-" continues it */
             have_final_line = (line[3] == ' ');
             char *next = strstr(line, "\r\n");
@@ -87,6 +106,11 @@ static esp_err_t smtp_expect(int sock, int expect_code) {
     }
     return ESP_OK;
 }
+
+static esp_err_t smtp_expect(int sock, int expect_code) {
+    return smtp_expect_ex(sock, expect_code, NULL);
+}
+
 
 static esp_err_t smtp_send(int sock, const char *fmt, ...) {
     char buf[512];
@@ -159,7 +183,10 @@ static esp_err_t send_email_once(const char *body, size_t body_len) {
     if (smtp_expect(sock, 220) != ESP_OK) {
         goto out;
     }
-    if (smtp_send(sock, "HELO esp32-modem-poc\r\n") != ESP_OK || smtp_expect(sock, 250) != ESP_OK) {
+
+    size_t server_max = 0;
+    if (smtp_send(sock, "EHLO esp32-modem-poc\r\n") != ESP_OK ||
+        smtp_expect_ex(sock, 250, &server_max) != ESP_OK) {
         goto out;
     }
     if (smtp_send(sock, "MAIL FROM:<%s>\r\n", CONFIG_MODEM_MAIL_FROM) != ESP_OK || smtp_expect(sock, 250) != ESP_OK) {
@@ -172,12 +199,26 @@ static esp_err_t send_email_once(const char *body, size_t body_len) {
         goto out;
     }
 
-    if (smtp_send(sock,
-                  "From: %s\r\n"
-                  "To: %s\r\n"
-                  "Subject: Greetings from space\r\n"
-                  "\r\n",
-                  CONFIG_MODEM_MAIL_FROM, CONFIG_MODEM_MAIL_TO) != ESP_OK) {
+    char headers[256];
+    int hdr_len = snprintf(headers, sizeof(headers),
+                           "From: %s\r\n"
+                           "To: %s\r\n"
+                           "Subject: Greetings from space\r\n"
+                           "\r\n",
+                           CONFIG_MODEM_MAIL_FROM, CONFIG_MODEM_MAIL_TO);
+    if (hdr_len < 0 || hdr_len >= (int)sizeof(headers)) {
+        goto out;
+    }
+
+    ESP_LOGE(TAG,"size: %d", server_max);
+    if(server_max == 99999){
+        struct databus_message msg ={
+            .type = DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR
+        };
+        databus_send(&msg);
+    }
+
+   if (smtp_send_raw(sock, headers, (size_t)hdr_len) != ESP_OK) {
         goto out;
     }
     if (smtp_send_raw(sock, body, body_len) != ESP_OK) {

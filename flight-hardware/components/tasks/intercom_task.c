@@ -57,7 +57,7 @@ void intercom_task(void *arg) {
 
         if (context->mode == INTERCOM_TASK_MODE_TELEMETRY) {
             if (context->source.status == NULL || context->source.status->mutex == NULL ||
-                context->source.status->value == NULL) {
+                context->source.status->value == NULL || context->intercom == NULL) {
                 ESP_LOGE(TAG, "Invalid intercom status context");
                 context->status_indicator->set_status(context->status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
                 vTaskDelete(NULL);

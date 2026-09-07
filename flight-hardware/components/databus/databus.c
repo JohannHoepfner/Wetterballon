@@ -8,6 +8,7 @@
 #include "esp_log.h"
 #include "esp_now.h"
 #include "esp_wifi.h"
+#include "include/databus_message.h"
 
 static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX) <= ESP_NOW_MAX_DATA_LEN,
               "sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)"
@@ -36,9 +37,11 @@ static uint8_t broadcast_mac[ESP_NOW_ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
 void (*data_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
 void (*log_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
 void (*timesync_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
+void (*kill_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
 int num_log_callbacks = 0;
 int num_data_callbacks = 0;
 int num_timesync_callbacks = 0;
+int num_kill_callbacks = 0;
 
 void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
     uint8_t *mac_addr = recv_info->src_addr;
@@ -95,6 +98,13 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
             if (timesync_callbacks[i] == NULL)
                 continue;
             timesync_callbacks[i](&msg);
+        }
+        break;
+    case DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR:
+        for (int i = 0; i < num_kill_callbacks; ++i) {
+            if (kill_callbacks[i] == NULL)
+                continue;
+            kill_callbacks[i](&msg);
         }
         break;
     default:
@@ -195,6 +205,13 @@ esp_err_t databus_on_receive(uint64_t message_type, DatabusReceiveHandler handle
         }
         timesync_callbacks[num_timesync_callbacks] = handler;
         num_timesync_callbacks++;
+        break;
+    case DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR:
+        if (num_kill_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
+            return ESP_ERR_INVALID_STATE;
+        }
+        kill_callbacks[num_kill_callbacks] = handler;
+        num_kill_callbacks++;
         break;
     default:
         return ESP_ERR_INVALID_ARG;
