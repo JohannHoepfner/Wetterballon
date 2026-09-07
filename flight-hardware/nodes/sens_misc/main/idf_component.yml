@@ -1,7 +1,7 @@
 dependencies:
   idf: ">=5.4.0"
   johannh/databus:
-    override_path: "../../../components/intracom/databus/"
+    override_path: "../../../components/databus/"
   johannh/mock:
     override_path: "../../../components/sensor/mock/"
   johannh/pt1000:

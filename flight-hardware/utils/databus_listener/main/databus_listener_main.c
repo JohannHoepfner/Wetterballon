@@ -20,11 +20,10 @@ void app_main(void) {
     }
     ESP_ERROR_CHECK(ret);
 
-    databus_wifi_init();
-    databus_init();
+    ESP_ERROR_CHECK(databus.init(NODE_ID_RADIO_GATEWAY));
 
-    databus_register_recv_callback(DATABUS_MSG_TYPE_LOG, espnow_recv_callback_log);
-    databus_register_recv_callback(DATABUS_MSG_TYPE_DATA, espnow_recv_callback_dat);
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_LOG, espnow_recv_callback_log));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, espnow_recv_callback_dat));
 
     while (true) {
         vTaskDelay(500 / portTICK_PERIOD_MS);

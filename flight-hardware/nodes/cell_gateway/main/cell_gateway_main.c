@@ -54,13 +54,12 @@ void app_main(void) {
     }
     ESP_ERROR_CHECK(nvs_err);
 
-    Intracom *intracom = &databus;
     Store *store = &sd_card;
     StatusIndicator *status_indicator = &esp_led;
 
-    ESP_ERROR_CHECK(intracom->init(NODE_ID_CELL_GATEWAY));
-    ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_DATA, on_databus_data));
-    ESP_ERROR_CHECK(intracom->register_recv_callback(DATABUS_MSG_TYPE_LOG, on_databus_log));
+    ESP_ERROR_CHECK(databus.init(NODE_ID_CELL_GATEWAY));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_LOG, on_databus_log));
     ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 

@@ -3,8 +3,6 @@
 #include "../../sensor/sensor.h"
 #include "../../store/store.h"
 #include "../../status_indicator/status_indicator.h"
-#include "databus.h"
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
@@ -19,9 +17,10 @@ typedef struct {
 
 typedef struct {
     const SensorSchedule *schedule;
-    Intracom *intracom;
     Store *store;
-    SemaphoreHandle_t output_mutex;
+    SemaphoreHandle_t sensor_output_mutex;
 } SensorTaskContext;
 
 void sensor_task(void *arg);
+esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
+                             Store *store, StatusIndicator *status_indicator);

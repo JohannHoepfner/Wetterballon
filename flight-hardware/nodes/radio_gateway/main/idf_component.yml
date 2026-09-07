@@ -1,12 +1,14 @@
 dependencies:
   idf: ">=5.4.0"
   johannh/databus:
-    override_path: "../../../components/intracom/databus/"
+    override_path: "../../../components/databus/"
   johannh/mock_store:
     override_path: "../../../components/store/mock_store/"
   johannh/neo_m8:
     override_path: "../../../components/sensor/neo_m8/"
-  johannh/sensor_task:
-    override_path: "../../../components/sensor_task/"
+  johannh/tasks:
+    override_path: "../../../components/tasks/"
   johannh/esp_led:
     override_path: "../../../components/status_indicator/esp_led/"
+  johannh/radio:
+    override_path: "../../../components/intercom/radio/"

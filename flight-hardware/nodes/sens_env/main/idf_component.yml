@@ -1,7 +1,7 @@
 dependencies:
   idf: ">=5.4.0"
   johannh/databus:
-    override_path: "../../../components/intracom/databus/"
+    override_path: "../../../components/databus/"
   johannh/mock:
     override_path: "../../../components/sensor/mock/"
   johannh/geiger:
@@ -14,7 +14,7 @@ dependencies:
     override_path: "../../../components/store/sd_card/"
   johannh/mock_store:
     override_path: "../../../components/store/mock_store/"
-  johannh/sensor_task:
-    override_path: "../../../components/sensor_task/"
+  johannh/tasks:
+    override_path: "../../../components/tasks/"
   johannh/esp_led:
     override_path: "../../../components/status_indicator/esp_led/"

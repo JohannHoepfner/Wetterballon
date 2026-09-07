@@ -1,5 +1,4 @@
 #include "databus.h"
-#include "databus_message.h"
 
 #include <string.h>
 #include <sys/select.h>
@@ -14,13 +13,16 @@ static_assert(sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PRE
               "sizeof(struct databus_message) + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)"
               "overflows ESP_NOW_MAX_LEN");
 
-static const char *TAG = "intracom/databus";
+static const char *TAG = "databus";
 
 uint8_t node_id = 0;
 uint64_t mesage_id_counter = 0;
 
-Intracom databus = {
-    .init = databus_init, .send = databus_send_data, .register_recv_callback = databus_register_recv_callback};
+Databus databus = {
+    .init = databus_init,
+    .send = databus_send_data,
+    .on_receive = databus_on_receive,
+};
 
 #define ESPNOW_MAXDELAY 512
 
@@ -93,7 +95,7 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
     }
 }
 
-esp_err_t databus_init(NODE_ID id) {
+esp_err_t databus_init(uint8_t id) {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
@@ -136,17 +138,24 @@ esp_err_t databus_send_data(time_t time, char *msg_str) {
     return databus_send(&msg);
 }
 
-esp_err_t databus_register_recv_callback(uint64_t message_type, void (*callback)(struct databus_message *)) {
+esp_err_t databus_on_receive(uint64_t message_type, DatabusReceiveHandler handler) {
+    if (handler == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     switch (message_type) {
     case DATABUS_MSG_TYPE_DATA:
-        data_callbacks[num_data_callbacks] = callback;
+        if (num_data_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
+            return ESP_ERR_INVALID_STATE;
+        }
+        data_callbacks[num_data_callbacks] = handler;
         num_data_callbacks++;
         break;
     case DATABUS_MSG_TYPE_LOG:
         if (num_log_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
             return ESP_ERR_INVALID_STATE;
         }
-        log_callbacks[num_log_callbacks] = callback;
+        log_callbacks[num_log_callbacks] = handler;
         num_log_callbacks++;
         break;
     default:

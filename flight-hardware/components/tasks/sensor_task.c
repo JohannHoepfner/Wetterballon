@@ -1,4 +1,5 @@
 #include "sensor_task.h"
+#include "databus.h"
 
 #include <freertos/task.h>
 
@@ -7,8 +8,9 @@
 #include <stdbool.h>
 #include <time.h>
 
-static const char *TAG = "sensor_task";
+static const char *TAG = "tasks/sensor_task";
 
+// TODO: esp_err_t instead of void
 void sensor_task(void *arg) {
     const SensorTaskContext *context = (SensorTaskContext *)arg;
 
@@ -44,13 +46,13 @@ void sensor_task(void *arg) {
     }
     ESP_LOGI(TAG, "Sensor '%s': Initialized successfully", context->schedule->name);
 
-    // Continuously read sensor data, store it and send via intracom
+    // Continuously read sensor data, store it and send via databus
     while (true) {
         // Read the sensor data
         char *sensor_value = context->schedule->sensor->read();
         time_t now = time(NULL);
 
-        xSemaphoreTake(context->output_mutex, portMAX_DELAY);
+        xSemaphoreTake(context->sensor_output_mutex, portMAX_DELAY);
 
         esp_err_t err = context->store->save(now, sensor_value);
         if (err != ESP_OK) {
@@ -60,9 +62,9 @@ void sensor_task(void *arg) {
                 context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
             }
         } else {
-            err = context->intracom->send(now, sensor_value);
+            err = databus.send(now, sensor_value);
             if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Sensor '%s': Failed to send data via intracom: %s (0x%x)", context->schedule->name,
+                ESP_LOGE(TAG, "Sensor '%s': Failed to send data via databus: %s (0x%x)", context->schedule->name,
                          esp_err_to_name(err), err);
                 if (context->schedule->status_indicator != NULL) {
                     context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
@@ -74,7 +76,35 @@ void sensor_task(void *arg) {
             }
         }
 
-        xSemaphoreGive(context->output_mutex);
+        xSemaphoreGive(context->sensor_output_mutex);
         vTaskDelay(context->schedule->read_interval);
     }
+}
+
+esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
+                             Store *store, StatusIndicator *status_indicator) {
+    SemaphoreHandle_t sensor_output_mutex = xSemaphoreCreateMutex();
+    if (sensor_output_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create sensor output mutex");
+        status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+        return ESP_ERR_NO_MEM;
+    }
+
+    for (size_t i = 0; i < schedule_count; ++i) {
+        contexts[i] = (SensorTaskContext){
+            .schedule = &schedules[i],
+            .store = store,
+            .sensor_output_mutex = sensor_output_mutex,
+        };
+
+        BaseType_t task_created = xTaskCreate(sensor_task, "sensor_read", 4096, &contexts[i], 5, NULL);
+
+        if (task_created != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create task for sensor %zu", i);
+            status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+            return ESP_FAIL;
+        }
+    }
+
+    return ESP_OK;
 }

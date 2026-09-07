@@ -29,11 +29,10 @@ void app_main(void) {
     }
     ESP_ERROR_CHECK(ret);
 
-    Intracom *intracom = &databus;
     Store *store = &mock_store;
     StatusIndicator *status_indicator = &esp_led;
 
-    ESP_ERROR_CHECK(intracom->init(NODE_ID_SENS_MISC));
+    ESP_ERROR_CHECK(databus.init(NODE_ID_SENS_MISC));
     ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
@@ -52,8 +51,8 @@ void app_main(void) {
     schedules[1].status_indicator = status_indicator;
     // schedules[1].sensor = sensor_bmo055;
 
-    SemaphoreHandle_t output_mutex = xSemaphoreCreateMutex();
-    if (output_mutex == NULL) {
+    SemaphoreHandle_t sensor_output_mutex = xSemaphoreCreateMutex();
+    if (sensor_output_mutex == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor output mutex");
         return;
     }
@@ -61,9 +60,8 @@ void app_main(void) {
     for (size_t i = 0; i < sizeof(schedules) / sizeof(schedules[0]); ++i) {
         task_contexts[i] = (SensorTaskContext){
             .schedule = &schedules[i],
-            .intracom = intracom,
             .store = store,
-            .output_mutex = output_mutex,
+            .sensor_output_mutex = sensor_output_mutex,
         };
         BaseType_t task_created = xTaskCreate(sensor_task, "sensor_read", 4096, &task_contexts[i], 5, NULL);
         if (task_created != pdPASS) {

@@ -1,4 +1,4 @@
-#include "include/databus_message.h"
+#include "databus_message.h"
 
 #include "endian.h"
 #include <limits.h>

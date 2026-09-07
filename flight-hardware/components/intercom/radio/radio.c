@@ -31,31 +31,34 @@ void amp_disable() {
 }
 
 esp_err_t radio_init(void) {
-    gpio_set_direction(CONFIG_RADIO_AMP_PWK, GPIO_MODE_OUTPUT);
-    amp_disable();
+    // gpio_set_direction(CONFIG_RADIO_AMP_PWK, GPIO_MODE_OUTPUT);
+    // amp_disable();
 
-    esp_err_t err = 0;
+    // esp_err_t err = 0;
 
-    ESP_LOGI(TAG, "initing I2C");
+    // ESP_LOGI(TAG, "initing I2C");
 
-    err |= si5351_i2c_init(&si5351_dev, I2C_NUM_0, CONFIG_RADIO_SDA_PIN, CONFIG_RADIO_SCL_PIN, 400000);
-    if (err) {
-        ESP_LOGI(TAG, "ERROR INIT I2C!");
-        return -1;
-    }
+    // err |= si5351_i2c_init(&si5351_dev, I2C_NUM_0, CONFIG_RADIO_SDA_PIN, CONFIG_RADIO_SCL_PIN, 400000);
+    // if (err) {
+    //     ESP_LOGI(TAG, "ERROR INIT I2C!");
+    //     return -1;
+    // }
 
-    ESP_LOGI(TAG, "initing SI5351");
+    // ESP_LOGI(TAG, "initing SI5351");
 
-    err |= si5351_init(&si5351_dev, SI5351_CRYSTAL_LOAD_0PF, 25E6, 0);
-    if (err) {
-        ESP_LOGI(TAG, "ERROR INIT!");
-        return -1;
-    }
+    // err |= si5351_init(&si5351_dev, SI5351_CRYSTAL_LOAD_0PF, 25E6, 0);
+    // if (err) {
+    //     ESP_LOGI(TAG, "ERROR INIT!");
+    //     return -1;
+    // }
+    ESP_LOGI(TAG, "Radio intercom adapter initialized");
 
     return ESP_OK;
 }
 
 esp_err_t radio_deinit(void) {
+    ESP_LOGI(TAG, "Radio intercom adapter deinitialized");
+
     return ESP_OK;
 }
 
@@ -125,49 +128,57 @@ bool rtty_symbol_table[][5] = {
 };
 
 esp_err_t radio_send_msg(char *buf, size_t buflen) {
-    amp_enable();
-    si5351_output_enable(&si5351_dev, SI5351_CLK0, true);
-
-    _radio_send_bit(1);
-    usleep(180 * 1000);
-
-    _radio_send_bits(rtty_symbol_table[37]); // CR
-    _radio_send_bits(rtty_symbol_table[38]); // LF
-
-    bool numbersMode = false;
-    bool numbersModePrev = false;
-
-    for (size_t i_char = 0; i_char < buflen; ++i_char) {
-        char c = buf[i_char];
-
-        int symbolIndex = 0;
-        int symbolShift = 65;
-        if (c < 58 && c != 32) {
-            numbersMode = true;
-            symbolShift = 22;
-            if (!numbersModePrev) {
-                _radio_send_bits(rtty_symbol_table[39]);
-            }
-        } else {
-            // Letters
-            numbersMode = false;
-            if (numbersModePrev) {
-                _radio_send_bits(rtty_symbol_table[40]);
-            }
-        }
-        numbersModePrev = numbersMode;
-        symbolIndex = c - symbolShift;
-
-        if (c == 32) {
-            symbolIndex = 36;
-        }
-        _radio_send_bits(rtty_symbol_table[symbolIndex]);
+    // Don't send if the buffer is empty or null
+    if (buf == NULL || buflen == 0) {
+        ESP_LOGW(TAG, "radio_send_msg: buffer is NULL or empty");
+        return ESP_OK;
     }
 
-    _radio_send_bits(rtty_symbol_table[37]); // CR
-    _radio_send_bits(rtty_symbol_table[38]); // LF
+    // amp_enable();
+    // si5351_output_enable(&si5351_dev, SI5351_CLK0, true);
 
-    si5351_output_enable(&si5351_dev, SI5351_CLK0, false);
-    amp_disable();
+    // _radio_send_bit(1);
+    // usleep(180 * 1000);
+
+    // _radio_send_bits(rtty_symbol_table[37]); // CR
+    // _radio_send_bits(rtty_symbol_table[38]); // LF
+
+    // bool numbersMode = false;
+    // bool numbersModePrev = false;
+
+    // for (size_t i_char = 0; i_char < buflen; ++i_char) {
+    //     char c = buf[i_char];
+
+    //     int symbolIndex = 0;
+    //     int symbolShift = 65;
+    //     if (c < 58 && c != 32) {
+    //         numbersMode = true;
+    //         symbolShift = 22;
+    //         if (!numbersModePrev) {
+    //             _radio_send_bits(rtty_symbol_table[39]);
+    //         }
+    //     } else {
+    //         // Letters
+    //         numbersMode = false;
+    //         if (numbersModePrev) {
+    //             _radio_send_bits(rtty_symbol_table[40]);
+    //         }
+    //     }
+    //     numbersModePrev = numbersMode;
+    //     symbolIndex = c - symbolShift;
+
+    //     if (c == 32) {
+    //         symbolIndex = 36;
+    //     }
+    //     _radio_send_bits(rtty_symbol_table[symbolIndex]);
+    // }
+
+    // _radio_send_bits(rtty_symbol_table[37]); // CR
+    // _radio_send_bits(rtty_symbol_table[38]); // LF
+
+    // si5351_output_enable(&si5351_dev, SI5351_CLK0, false);
+    // amp_disable();
+    ESP_LOGI(TAG, "radio mock send: '%.*s'", (int)buflen, buf);
+
     return ESP_OK;
 }
