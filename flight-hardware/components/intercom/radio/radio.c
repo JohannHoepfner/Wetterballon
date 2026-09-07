@@ -27,10 +27,10 @@ Intercom radio = {
 si5351_t si5351_dev;
 
 void amp_enable() {
-    gpio_set_level(CONFIG_RADIO_AMP_PWK, 0);
+    gpio_set_level(CONFIG_RADIO_AMP_PWK, 1);
 }
 void amp_disable() {
-    gpio_set_level(CONFIG_RADIO_AMP_PWK, 1);
+    gpio_set_level(CONFIG_RADIO_AMP_PWK, 0);
 }
 
 
