@@ -6,6 +6,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
+#include "sim_modem.h"
 #include "databus.h"
 #include "esp_log.h"
 #include "sd_card.h"
@@ -15,38 +16,32 @@
 
 static const char *TAG = "node/cell_gateway";
 
-#define AGG_BUF_SIZE 4096
+Intercom *intercom = &sim_modem;
+Store *store = &sd_card;
+StatusIndicator *status_indicator = &esp_led;
 
-static SemaphoreHandle_t s_agg_mutex;
-static char s_agg_buf[AGG_BUF_SIZE];
-static size_t s_agg_len = 0;
-
-static void aggregate_message(const char *label, uint64_t send_time, const char *text, size_t text_maxlen) {
-    if (xSemaphoreTake(s_agg_mutex, pdMS_TO_TICKS(100)) != pdTRUE) {
-        ESP_LOGW(TAG, "Could not lock aggregate buffer, dropping message");
+static void on_databus_data(struct databus_message *message) {
+    if (message == NULL) {
+        ESP_LOGE(TAG, "Invalid databus message");
         return;
     }
-    int n = snprintf(s_agg_buf + s_agg_len, sizeof(s_agg_buf) - s_agg_len, "%s [%" PRIu64 "] %.*s\r\n", label,
-                     send_time, (int)text_maxlen, text);
-    if (n > 0 && (size_t)n < sizeof(s_agg_buf) - s_agg_len) {
-        s_agg_len += (size_t)n;
-    } else {
-        ESP_LOGW(TAG, "Aggregate buffer full, dropping message");
+
+    if (store == NULL) {
+        ESP_LOGE(TAG, "Store is not initialized");
+        return;
     }
-    xSemaphoreGive(s_agg_mutex);
-}
 
-static void on_databus_data(struct databus_message *msg) {
-    aggregate_message("DATA", msg->send_time, msg->data.message, sizeof(msg->data.message));
-}
+    time_t send_time = message->send_time;
+    char *msg_str = message->data.message;
 
-static void on_databus_log(struct databus_message *msg) {
-    aggregate_message("LOG", msg->send_time, msg->log.message, sizeof(msg->log.message));
+    esp_err_t err = store->save(send_time, msg_str);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
+    }
 }
 
 void app_main(void) {
-    s_agg_mutex = xSemaphoreCreateMutex();
-
+    // Initialize NVS
     esp_err_t nvs_err = nvs_flash_init();
     if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES || nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -54,17 +49,24 @@ void app_main(void) {
     }
     ESP_ERROR_CHECK(nvs_err);
 
-    Store *store = &sd_card;
-    StatusIndicator *status_indicator = &esp_led;
-
+    // Initialize databus
     ESP_ERROR_CHECK(databus.init(NODE_ID_CELL_GATEWAY));
-    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
-    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_LOG, on_databus_log));
-    ESP_ERROR_CHECK(store->init());
-    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
+    // Initialize central adapters
+    ESP_ERROR_CHECK(intercom->init());
+    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
+    ESP_ERROR_CHECK(store->init());
+
+    // Hook up databus receive callback to save messages to store
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
+
+    // Set up intercom task to send data from sd card via intercom
+    // TODO
     // BaseType_t task_created = xTaskCreate(send_task, "sim_modem_send", 4096, NULL, 5, NULL);
     // if (task_created != pdPASS) {
     //     ESP_LOGE(TAG, "Failed to create modem send task");
     // }
+
+    // Initialize sensor tasks
+    // -
 }

@@ -4,11 +4,11 @@
 #include <string.h>
 #include <time.h>
 
+#include "esp_led.h"
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
-#include "esp_led.h"
-#include "esp_log.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 
@@ -20,6 +20,11 @@
 #include "sensor_task.h"
 
 static const char *TAG = "node/radio_gateway";
+
+Intercom *intercom = &radio;
+Store *store = &mock_store;
+StatusIndicator *status_indicator = &esp_led;
+Sensor *sensor_gps = &neo_m8;
 
 #define TELEMETRY_BODY_SIZE 256
 
@@ -61,6 +66,21 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
 }
 
 static void on_databus_data(struct databus_message *message) {
+    if (message == NULL) {
+        ESP_LOGE(TAG, "Invalid databus message");
+        return;
+    }
+
+    // Also save the message to the store if available
+    if (store != NULL) {
+        time_t send_time = message->send_time;
+        char *msg_str = message->data.message;
+        esp_err_t err = store->save(send_time, msg_str);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
+        }
+    }
+
     float new_temperature = 0.0f;
 
     // Read temp from databus (sens_misc)
@@ -97,12 +117,9 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.init(NODE_ID_RADIO_GATEWAY));
 
     // Initialize central adapters
-    Intercom *intercom = &radio;
-    ESP_ERROR_CHECK(radio.init());
-    StatusIndicator *status_indicator = &esp_led;
-    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
-    Store *store = &mock_store;
+    ESP_ERROR_CHECK(intercom->init());
     ESP_ERROR_CHECK(store->init());
+    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
     // Initialize telemetry status -> this is sent periodically via intercom_task (and broadcasted via radio)
     s_telemetry_status.mutex = xSemaphoreCreateMutex();
@@ -127,7 +144,7 @@ void app_main(void) {
     // Hook up databus receive callback to update telemetry status
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
 
-    // Set up intercom task to send telemetry status periodically
+    // Set up intercom task to send last telemetry status periodically via intercom
     static IntercomTaskContext intercom_context;
     intercom_context = (IntercomTaskContext){
         .mode = INTERCOM_TASK_STATUS,
@@ -140,13 +157,12 @@ void app_main(void) {
     BaseType_t intercom_task_created =
         xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context, 5, NULL);
     if (intercom_task_created != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create modem send task");
+        ESP_LOGE(TAG, "Failed to create intercom task");
         status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
         return;
     }
 
     // Initialize sensor tasks
-    Sensor *sensor_gps = &neo_m8;
     static SensorSchedule schedules[] = {
         {"gps", NULL, NULL, pdMS_TO_TICKS(3000)},
     };
