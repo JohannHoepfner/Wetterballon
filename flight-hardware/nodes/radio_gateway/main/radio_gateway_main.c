@@ -164,7 +164,6 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.init(NODE_ID_RADIO_GATEWAY));
 
     // Initialize central adapters
-    ESP_ERROR_CHECK(intercom->init());
     ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
