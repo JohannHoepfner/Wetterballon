@@ -187,6 +187,9 @@ void app_main(void) {
         .temperature = 0.0f,
     };
     s_telemetry_context = &telemetry_context;
+    xSemaphoreTake(s_telemetry_status.mutex, portMAX_DELAY);
+    format_telemetry_body(s_telemetry_context, s_telemetry_status.value, s_telemetry_status.value_size);
+    xSemaphoreGive(s_telemetry_status.mutex);
 
     // Hook up databus receive callback to update telemetry status
     ESP_ERROR_CHECK(sensor_gps->on_receive(on_gps_data));

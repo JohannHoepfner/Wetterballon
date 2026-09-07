@@ -51,3 +51,4 @@ components/
 - [x] status indicator leds
 - [ ] cell_gateway read 
 - [ ] sensor adapter for BNO055
+- [ ] adjust format_telemetry_body to Richards specs
