@@ -3,7 +3,6 @@
 #include "geiger.h"
 #include "mock_store.h"
 #include "mock.h"
-#include "pt1000.h"
 #include "sd_card.h"
 #include "sensor_task.h"
 #include "esp_led.h"
@@ -25,7 +24,6 @@ Store *store = &mock_store;
 StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_geiger = &geiger;
 Sensor *sensor_bme280 = &bme280_s;
-Sensor *sensor_pt1000 = &pt1000;
 
 static void on_databus_data(struct databus_message *message) {
     if (message == NULL) {
@@ -60,8 +58,8 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.init(NODE_ID_SENS_ENV));
 
     // Initialize central adapters
-    ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
+    ESP_ERROR_CHECK(store->init());
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
@@ -70,14 +68,11 @@ void app_main(void) {
     static SensorSchedule schedules[] = {
         {"geiger", NULL, NULL, pdMS_TO_TICKS(500)},
         {"bme280", NULL, NULL, pdMS_TO_TICKS(1000)},
-        {"pt1000", NULL, NULL, pdMS_TO_TICKS(1000)},
     };
     schedules[0].status_indicator = status_indicator;
-    // schedules[0].sensor = sensor_geiger;
+    schedules[0].sensor = sensor_geiger;
     schedules[1].status_indicator = status_indicator;
-    // schedules[1].sensor = sensor_bme280;
-    schedules[2].status_indicator = status_indicator;
-    schedules[2].sensor = sensor_pt1000;
+    schedules[1].sensor = sensor_bme280;
     static SensorTaskContext sensor_task_contexts[sizeof(schedules) / sizeof(schedules[0])];
     esp_err_t err = start_sensor_tasks(schedules, sensor_task_contexts, sizeof(schedules) / sizeof(schedules[0]), store,
                                        status_indicator);

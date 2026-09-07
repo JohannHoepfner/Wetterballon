@@ -52,6 +52,16 @@ void sensor_task(void *arg) {
     while (true) {
         // Read the sensor data
         char *sensor_value = context->schedule->sensor->read();
+        if (sensor_value == NULL) {
+            ESP_LOGE(TAG, "Sensor '%s': Failed to read sensor data", context->schedule->name);
+            if (context->schedule->status_indicator != NULL) {
+                context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
+            }
+            context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
+            vTaskDelay(context->schedule->read_interval);
+            continue;
+        }
+
         time_t now = time(NULL);
 
         xSemaphoreTake(context->sensor_output_mutex, portMAX_DELAY);

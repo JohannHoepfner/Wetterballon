@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 static const char *TAG = "sensor/bme280";
+
 static const i2c_port_t I2C_PORT = I2C_NUM_0;
 static const gpio_num_t SDA_PIN = CONFIG_BME280_SDA_PIN;
 static const gpio_num_t SCL_PIN = CONFIG_BME280_SCL_PIN;
@@ -59,10 +60,10 @@ char *bme280_read(void) {
     float temperature = 0.0F;
     float pressure = 0.0F;
     float humidity = 0.0F;
+    
     if (bme280_read_temperature(sensor, &temperature) != ESP_OK || bme280_read_pressure(sensor, &pressure) != ESP_OK ||
         bme280_read_humidity(sensor, &humidity) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read BME280");
-        return "bme280_error";
+        return NULL;
     }
 
     snprintf(formatted_reading, sizeof(formatted_reading), "t2=%.2f,p=%.2f,h=%.2f", temperature, pressure, humidity);
