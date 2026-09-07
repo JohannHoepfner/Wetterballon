@@ -85,6 +85,8 @@ static size_and_figs write_rtty_to_buffer(const char *input, const size_t len, c
         char curr_word = rtty_encode_letter(curr_letter);
         output[stats.len] = curr_word;
         ++stats.len;
+        if (curr_letter == ' ' || curr_letter == '\r' || curr_letter == '\n')
+            stats.is_figs = false;
     }
 
     return stats;
