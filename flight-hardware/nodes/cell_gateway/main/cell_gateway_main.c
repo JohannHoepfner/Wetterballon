@@ -10,9 +10,9 @@
 #include "esp_led.h"
 #include "esp_log.h"
 #include "intercom_task.h"
+#include "mock_store.h"
 #include "nvs_flash.h"
 #include "sd_card.h"
-#include "mock_store.h"
 #include "sdkconfig.h"
 #include "sim_modem.h"
 
@@ -67,6 +67,15 @@ void app_main(void) {
         store = &mock_store;
         ESP_ERROR_CHECK(store->init());
     }
+
+    // Initialize sim_modem (intercom)
+    int backoff_sec = 5;
+    while (context->intercom->init() != ESP_OK) {
+        ESP_LOGE(TAG, "Sim modem initialization failed, retrying in %d s", backoff_sec);
+        vTaskDelay(pdMS_TO_TICKS(backoff_sec * 1000));
+        backoff_sec = backoff_sec < 300 ? backoff_sec * 2 : 300;
+    }
+    ESP_LOGI(TAG, "Sim modem ready");
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));

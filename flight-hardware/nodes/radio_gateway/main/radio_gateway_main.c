@@ -44,7 +44,9 @@ typedef struct {
 static TelemetryContext *s_telemetry_context;
 static IntercomTaskStatus s_telemetry_status;
 static char s_telemetry_status_value[TELEMETRY_BODY_SIZE];
-static char s_intercom_body[TELEMETRY_BODY_SIZE];
+static char s_telemetry_body[TELEMETRY_BODY_SIZE];
+static char s_explanation_body[TELEMETRY_BODY_SIZE];
+static char s_greet_emil_body[TELEMETRY_BODY_SIZE];
 
 static void format_telemetry_body(const TelemetryContext *context, char *buffer, size_t buffer_size) {
     int hour = context->hour;
@@ -59,8 +61,8 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
         second = localtime(&now)->tm_sec;
     }
 
-    snprintf(buffer, buffer_size, "%02d%02d%02.0f %02.4f,%02.4f,%05.0f,%+02.0f", hour, minute, second, context->latitude,
-             context->longitude, context->altitude, context->temperature);
+    snprintf(buffer, buffer_size, "%02d%02d%02.0f %02.4f,%02.4f,%05.0f,%+02.0f", hour, minute, second,
+             context->latitude, context->longitude, context->altitude, context->temperature);
 }
 
 static void on_gps_data(const char *gps_data) {
@@ -185,9 +187,10 @@ static void on_databus_data(struct databus_message *message) {
 static IntercomTaskContext intercom_context_telemetry;
 static IntercomTaskContext intercom_context_explanation;
 static IntercomTaskContext intercom_context_greet_emil;
+static SemaphoreHandle_t s_intercom_send_mutex;
 
 static void on_databus_kill_radio(struct databus_message *message) {
-    ESP_LOGE(TAG,"radio star was murdered.");
+    ESP_LOGE(TAG, "radio star was murdered.");
     intercom_context_telemetry.intercom = NULL;
     intercom_context_explanation.intercom = NULL;
     intercom_context_greet_emil.intercom = NULL;
@@ -208,6 +211,15 @@ void app_main(void) {
     // Initialize central adapters
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
     ESP_ERROR_CHECK(store->init());
+
+    // Initialize radio
+    ESP_ERROR_CHECK(intercom->init());
+
+    s_intercom_send_mutex = xSemaphoreCreateMutex();
+    if (s_intercom_send_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create intercom send mutex");
+        return;
+    }
 
     // Initialize telemetry status -> this is sent periodically via intercom_task (and broadcasted via radio)
     s_telemetry_status.mutex = xSemaphoreCreateMutex();
@@ -240,8 +252,9 @@ void app_main(void) {
     // Set up intercom task to send last telemetry status periodically via intercom
     intercom_context_telemetry.mode = INTERCOM_TASK_MODE_TELEMETRY;
     intercom_context_telemetry.intercom = intercom;
-    intercom_context_telemetry.body = s_intercom_body;
-    intercom_context_telemetry.body_size = sizeof(s_intercom_body);
+    intercom_context_telemetry.body = s_telemetry_body;
+    intercom_context_telemetry.body_size = sizeof(s_telemetry_body);
+    intercom_context_telemetry.send_mutex = s_intercom_send_mutex;
     intercom_context_telemetry.source.status = &s_telemetry_status;
     intercom_context_telemetry.send_interval = pdMS_TO_TICKS(60000); // Send every 60 seconds
     intercom_context_telemetry.status_indicator = status_indicator;
@@ -252,13 +265,16 @@ void app_main(void) {
         status_indicator->set_status(status_indicator, STATUS_INDICATOR_INTERCOM_ERROR);
         return;
     }
-    
+
     // Set up intercom task to send explanation message periodically via intercom
-    char *explanation_message = "FORMAT IS TIME KOORD-LAT,KOORD-LONG,TEMP CRC. MORE AT DA0FRA.ALTAFRANER.DE. PRPT VIA EMAIL WELCOME";
+    char *explanation_message =
+        "FORMAT IS TIME KOORD-LAT,KOORD-LONG,TEMP CRC. MORE AT DA0FRA.ALTAFRANER.DE. PRPT VIA EMAIL WELCOME";
     intercom_context_explanation.mode = INTERCOM_TASK_MODE_TEXT;
     intercom_context_explanation.intercom = intercom;
-    intercom_context_explanation.body = explanation_message;
-    intercom_context_explanation.body_size = strlen(explanation_message) + 1;
+    intercom_context_explanation.body = s_explanation_body;
+    intercom_context_explanation.body_size = sizeof(s_explanation_body);
+    intercom_context_explanation.send_mutex = s_intercom_send_mutex;
+    intercom_context_explanation.source.source_text.text = explanation_message;
     intercom_context_explanation.send_interval = pdMS_TO_TICKS(300000); // Send every 5 minutes
     intercom_context_explanation.status_indicator = status_indicator;
     BaseType_t intercom_explanation_task_created =
@@ -273,8 +289,10 @@ void app_main(void) {
     char *greet_emil_message = "GREETINGS TO DO1ESL";
     intercom_context_greet_emil.mode = INTERCOM_TASK_MODE_TEXT;
     intercom_context_greet_emil.intercom = intercom;
-    intercom_context_greet_emil.body = greet_emil_message;
-    intercom_context_greet_emil.body_size = strlen(greet_emil_message) + 1;
+    intercom_context_greet_emil.body = s_greet_emil_body;
+    intercom_context_greet_emil.body_size = sizeof(s_greet_emil_body);
+    intercom_context_greet_emil.send_mutex = s_intercom_send_mutex;
+    intercom_context_greet_emil.source.source_text.text = greet_emil_message;
     intercom_context_greet_emil.send_interval = pdMS_TO_TICKS(600000); // Send every 10 minutes
     intercom_context_greet_emil.status_indicator = status_indicator;
     BaseType_t intercom_greet_emil_task_created =

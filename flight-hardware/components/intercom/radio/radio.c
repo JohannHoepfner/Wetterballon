@@ -225,7 +225,7 @@ esp_err_t radio_send_frame(const radio_frame *frame) {
 }
 
 esp_err_t radio_send_msg(char *buf, size_t buflen) {
-    ESP_LOGI(TAG, "sending %x chars %s", buflen, buf);
+    ESP_LOGI(TAG, "sending %u chars '%s'", (unsigned)buflen, buf);
     radio_frame frame = radio_encode_frame(buf, buflen, true);
     if (frame.content == NULL) {
         ESP_LOGE(TAG, "could not allocate frame for %u byte message", (unsigned)buflen);

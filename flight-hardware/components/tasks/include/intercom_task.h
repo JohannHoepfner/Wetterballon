@@ -32,12 +32,16 @@ typedef struct {
 	Intercom *intercom;
 	char *body;
 	size_t body_size;
+	SemaphoreHandle_t send_mutex;
 	union {
 		IntercomTaskStatus *status;
 		struct {
 			Store *store;
 			size_t lines_per_send;
 		} source_store;
+		struct {
+			const char *text;
+		} source_text;
 	} source;
     TickType_t send_interval;
 	StatusIndicator *status_indicator;

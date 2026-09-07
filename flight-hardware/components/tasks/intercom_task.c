@@ -41,14 +41,6 @@ void intercom_task(void *arg) {
     ESP_LOGI(TAG, "Intercom task started in mode %d", context->mode);
     context->status_indicator->set_status(context->status_indicator, STATUS_INDICATOR_INITIALIZING);
 
-    int backoff_sec = 5;
-    while (context->intercom->init() != ESP_OK) {
-        ESP_LOGE(TAG, "Intercom initialization failed, retrying in %d s", backoff_sec);
-        vTaskDelay(pdMS_TO_TICKS(backoff_sec * 1000));
-        backoff_sec = backoff_sec < 300 ? backoff_sec * 2 : 300;
-    }
-    ESP_LOGI(TAG, "Intercom ready");
-
     size_t prev_lines_read = 0;
     size_t lines_read = 0;
     while (true) {
@@ -80,9 +72,22 @@ void intercom_task(void *arg) {
 
             ESP_LOGI(TAG, "Reading %zu lines from SD card for intercom send",
                      context->source.source_store.lines_per_send);
+            xSemaphoreTake(context->source.status->mutex, portMAX_DELAY);
             read_err = store->read_lines(context->source.source_store.lines_per_send, context->body, context->body_size,
                                          &lines_read);
             body_len = strnlen(context->body, context->body_size);
+            xSemaphoreGive(context->source.status->mutex);
+        } else if (context->mode == INTERCOM_TASK_MODE_TEXT) {
+            if (context->source.source_text.text == NULL) {
+                ESP_LOGE(TAG, "Invalid intercom text context");
+                context->status_indicator->set_status(context->status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
+                vTaskDelete(NULL);
+                return;
+            }
+
+            body_len = strnlen(context->source.source_text.text, context->body_size - 1);
+            memcpy(context->body, context->source.source_text.text, body_len);
+            context->body[body_len] = '\0';
         } else {
             ESP_LOGE(TAG, "Unknown intercom task mode");
             context->status_indicator->set_status(context->status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
@@ -97,7 +102,13 @@ void intercom_task(void *arg) {
             // Only send if read was successful
 
             ESP_LOGI(TAG, "Sending intercom data: %zu bytes, %zu lines", body_len, lines_read);
+            if (context->send_mutex != NULL) {
+                xSemaphoreTake(context->send_mutex, portMAX_DELAY);
+            }
             esp_err_t send_err = context->intercom->send(context->body, body_len);
+            if (context->send_mutex != NULL) {
+                xSemaphoreGive(context->send_mutex);
+            }
             if (send_err != ESP_OK) {
                 ESP_LOGE(TAG, "Sending failed");
                 context->status_indicator->set_status(context->status_indicator, STATUS_INDICATOR_ERROR);
