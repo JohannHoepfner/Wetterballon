@@ -51,7 +51,9 @@ void sensor_task(void *arg) {
 
     // Continuously read sensor data, store it and send via databus
     int save_fail_count = 0;
+    int reset_save_fail_count = 5; // Number of consecutive save failures before reinitializing the store
     int send_fail_count = 0;
+    int reset_send_fail_count = 5; // Number of consecutive send failures before reinitializing the databus
     while (true) {
         // Read the sensor data
         char *sensor_value = context->schedule->sensor->read();
@@ -74,6 +76,7 @@ void sensor_task(void *arg) {
             ESP_LOGE(TAG, "Sensor '%s': Failed to save data to store: %s (0x%x)", context->schedule->name,
                      esp_err_to_name(store_err), store_err);
         } else {
+            reset_save_fail_count = 5;
             ESP_LOGD(TAG, "Sensor '%s': Data saved to store successfully", context->schedule->name);
         }
 
@@ -83,6 +86,7 @@ void sensor_task(void *arg) {
             ESP_LOGE(TAG, "Sensor '%s': Failed to send data via databus: %s (0x%x)", context->schedule->name,
                      esp_err_to_name(databus_err), databus_err);
         } else {
+            reset_send_fail_count = 5;
             ESP_LOGD(TAG, "Sensor '%s': Data sent via databus successfully", context->schedule->name);
         }
 
@@ -92,14 +96,16 @@ void sensor_task(void *arg) {
                 store_err == ESP_OK && databus_err == ESP_OK ? STATUS_INDICATOR_OK : STATUS_INDICATOR_ERROR);
         }
 
-        if (save_fail_count > 5) {
+        if (save_fail_count > reset_save_fail_count) {
             ESP_LOGW(TAG, "Sensor '%s': Too many save failures, reinitializing store", context->schedule->name);
             context->store->reinit();
             save_fail_count = 0;
-        } else if (send_fail_count > 5) {
+            reset_save_fail_count += 2 * reset_save_fail_count;
+        } else if (send_fail_count > reset_send_fail_count) {
             ESP_LOGW(TAG, "Sensor '%s': Too many send failures, reinitializing databus", context->schedule->name);
             databus.reinit();
             send_fail_count = 0;
+            reset_send_fail_count += 2 * reset_send_fail_count;
         }
 
         xSemaphoreGive(context->sensor_output_mutex);
