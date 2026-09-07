@@ -22,8 +22,8 @@ StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_mock = &mock;
 
 static void on_databus_data(struct databus_message *message) {
-    if (message == NULL) {
-        ESP_LOGE(TAG, "Invalid databus message");
+    if (message == NULL || message->type != DATABUS_MSG_TYPE_DATA) {
+        ESP_LOGE(TAG, "Invalid databus data message");
         return;
     }
 
@@ -38,6 +38,9 @@ static void on_databus_data(struct databus_message *message) {
     esp_err_t err = store->save(send_time, msg_str);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
+        if (status_indicator != NULL && status_indicator->set_status != NULL) {
+            status_indicator->set_status(status_indicator, STATUS_INDICATOR_ERROR);
+        }
     }
 }
 
@@ -57,8 +60,10 @@ void app_main(void) {
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
     ESP_ERROR_CHECK(store->init());
 
-    // Hook up databus receive callback to save messages to store
+    // Hook up databus receive callbacks
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_LOG, on_databus_log_default));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_TIMESYNC, on_databus_timesync_default));
 
     // Initialize sensor tasks
     static SensorSchedule schedules[] = {
@@ -71,7 +76,7 @@ void app_main(void) {
                                        status_indicator);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start sensor tasks: %s (0x%x)", esp_err_to_name(err), err);
-        status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return;
     }
 }

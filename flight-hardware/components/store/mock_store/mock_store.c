@@ -10,6 +10,7 @@ static const char *TAG = "store/mock_store";
 
 Store mock_store = {
     .init = mock_store_init,
+    .reinit = mock_store_init,
     .deinit = mock_store_deinit,
     .save = mock_store_save,
     .read_lines = NULL, // Not implemented for mock store

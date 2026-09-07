@@ -15,6 +15,7 @@ struct color {
 #define BLUE (struct color){0, 0, 25}
 #define YELLOW (struct color){25, 10, 0}
 #define PURPLE (struct color){25, 0, 25}
+#define PINK (struct color){25, 2, 10}
 
 esp_err_t esp_led_init(StatusIndicator *self);
 esp_err_t esp_led_set(StatusIndicator *self, Status status);

@@ -25,24 +25,24 @@ void sensor_task(void *arg) {
     if (context->schedule->sensor == NULL) {
         ESP_LOGE(TAG, "Sensor '%s': No adapter defined, stopping sensor task", context->schedule->name);
         if (context->schedule->status_indicator != NULL) {
-            context->schedule->status_indicator->set_status(context->schedule->status_indicator, UNRECOVERABLE_ERROR);
+            context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         }
         vTaskDelete(NULL);
         return;
     }
 
     if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-        context->schedule->status_indicator->set_status(context->schedule->status_indicator, INITIALIZING);
+        context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_INITIALIZING);
     }
 
     // Initialize the sensor
-    ESP_LOGI(TAG, "Sensor '%s': Initializing...", context->schedule->name);
+    ESP_LOGI(TAG, "Sensor '%s': STATUS_INDICATOR_INITIALIZING...", context->schedule->name);
     esp_err_t err = context->schedule->sensor->init();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Sensor '%s': Failed to initialize sensor: %s (0x%x)", context->schedule->name,
                  esp_err_to_name(err), err);
         if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-            context->schedule->status_indicator->set_status(context->schedule->status_indicator, UNRECOVERABLE_ERROR);
+            context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         }
         vTaskDelete(NULL);
         return;
@@ -50,13 +50,15 @@ void sensor_task(void *arg) {
     ESP_LOGI(TAG, "Sensor '%s': Initialized successfully", context->schedule->name);
 
     // Continuously read sensor data, store it and send via databus
+    int save_fail_count = 0;
+    int send_fail_count = 0;
     while (true) {
         // Read the sensor data
         char *sensor_value = context->schedule->sensor->read();
         if (sensor_value == NULL) {
             ESP_LOGE(TAG, "Sensor '%s': Failed to read sensor data", context->schedule->name);
             if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-                context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
+                context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_ERROR);
             }
             vTaskDelay(context->schedule->read_interval);
             continue;
@@ -66,26 +68,38 @@ void sensor_task(void *arg) {
 
         xSemaphoreTake(context->sensor_output_mutex, portMAX_DELAY);
 
-        esp_err_t err = context->store->save(now, sensor_value);
-        if (err != ESP_OK) {
+        esp_err_t store_err = context->store->save(now, sensor_value);
+        if (store_err != ESP_OK) {
+            save_fail_count++;
             ESP_LOGE(TAG, "Sensor '%s': Failed to save data to store: %s (0x%x)", context->schedule->name,
-                     esp_err_to_name(err), err);
-            if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-                context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
-            }
+                     esp_err_to_name(store_err), store_err);
         } else {
-            err = databus.send_data(now, sensor_value);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Sensor '%s': Failed to send data via databus: %s (0x%x)", context->schedule->name,
-                         esp_err_to_name(err), err);
-                if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-                    context->schedule->status_indicator->set_status(context->schedule->status_indicator, ERROR);
-                }
-            } else {
-                if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-                    context->schedule->status_indicator->set_status(context->schedule->status_indicator, OK);
-                }
-            }
+            ESP_LOGD(TAG, "Sensor '%s': Data saved to store successfully", context->schedule->name);
+        }
+
+        esp_err_t databus_err = databus.send_data(now, sensor_value);
+        if (databus_err != ESP_OK) {
+            send_fail_count++;
+            ESP_LOGE(TAG, "Sensor '%s': Failed to send data via databus: %s (0x%x)", context->schedule->name,
+                     esp_err_to_name(databus_err), databus_err);
+        } else {
+            ESP_LOGD(TAG, "Sensor '%s': Data sent via databus successfully", context->schedule->name);
+        }
+
+        if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
+            context->schedule->status_indicator->set_status(
+                context->schedule->status_indicator,
+                store_err == ESP_OK && databus_err == ESP_OK ? STATUS_INDICATOR_OK : STATUS_INDICATOR_ERROR);
+        }
+
+        if (save_fail_count > 5) {
+            ESP_LOGW(TAG, "Sensor '%s': Too many save failures, reinitializing store", context->schedule->name);
+            context->store->reinit();
+            save_fail_count = 0;
+        } else if (send_fail_count > 5) {
+            ESP_LOGW(TAG, "Sensor '%s': Too many send failures, reinitializing databus", context->schedule->name);
+            databus.reinit();
+            send_fail_count = 0;
         }
 
         xSemaphoreGive(context->sensor_output_mutex);
@@ -98,7 +112,7 @@ esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *conte
     SemaphoreHandle_t sensor_output_mutex = xSemaphoreCreateMutex();
     if (sensor_output_mutex == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor output mutex");
-        status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return ESP_ERR_NO_MEM;
     }
 
@@ -113,7 +127,7 @@ esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *conte
 
         if (task_created != pdPASS) {
             ESP_LOGE(TAG, "Failed to create task for sensor %zu", i);
-            status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+            status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
             return ESP_FAIL;
         }
     }

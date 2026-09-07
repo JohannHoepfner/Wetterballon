@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <time.h>
 
 #include "esp_led.h"
@@ -86,6 +87,17 @@ static void on_gps_data(const char *gps_data) {
         ESP_LOGW(TAG, "Invalid GPS values: %s", gps_data);
         return;
     }
+
+    time_t new_time = time(NULL);
+    struct tm new_tm = *localtime(&new_time);
+    new_tm.tm_hour = new_hour;
+    new_tm.tm_min = new_minute;
+    new_tm.tm_sec = (int)new_second;
+    new_time = mktime(&new_tm);
+    struct timeval tv = {.tv_sec = new_time, .tv_usec = 0};
+    settimeofday(&tv, NULL);
+
+    
 
     xSemaphoreTake(s_telemetry_status.mutex, portMAX_DELAY);
 
@@ -203,12 +215,13 @@ void app_main(void) {
         .body_size = sizeof(s_intercom_body),
         .source.status = &s_telemetry_status,
         .send_interval = pdMS_TO_TICKS(5000),
+        .status_indicator = status_indicator,
     };
     BaseType_t intercom_task_created =
         xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context, 5, NULL);
     if (intercom_task_created != pdPASS) {
         ESP_LOGE(TAG, "Failed to create intercom task");
-        status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return;
     }
 
@@ -223,7 +236,7 @@ void app_main(void) {
                                        status_indicator);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start sensor tasks: %s (0x%x)", esp_err_to_name(err), err);
-        status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return;
     }
 }

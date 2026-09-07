@@ -22,7 +22,7 @@ led_strip_handle_t led_strip;
 static SemaphoreHandle_t esp_led_mutex;
 
 StatusIndicator esp_led = {
-    .ctx  = &esp_led_context,
+    .ctx = &esp_led_context,
     .init = esp_led_init,
     .set_status = esp_led_set,
 };
@@ -48,7 +48,7 @@ esp_err_t esp_led_init(StatusIndicator *self) {
     if (err != ESP_OK) {
         return err;
     }
-    err = esp_led_set(self, INITIALIZING);
+    err = esp_led_set(self, STATUS_INDICATOR_INITIALIZING);
     if (err != ESP_OK) {
         return err;
     }
@@ -63,31 +63,37 @@ esp_err_t esp_led_set(StatusIndicator *self, Status status) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (((EspLedContext *)self->ctx)->status == UNRECOVERABLE_ERROR) {
+    // If the current status is already STATUS_INDICATOR_SENSOR_ERROR or STATUS_INDICATOR_STORE_ERROR, we don't want to
+    // change it to another status
+    if (((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SENSOR_ERROR ||
+        ((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SD_CARD_ERROR) {
         xSemaphoreGive(esp_led_mutex);
         return ESP_OK;
     }
 
     struct color color;
     switch (status) {
-    case INITIALIZING:
+    case STATUS_INDICATOR_INITIALIZING:
         color = BLUE;
         break;
-    case UNRECOVERABLE_ERROR:
+    case STATUS_INDICATOR_SD_CARD_ERROR:
+        color = PINK;
+        break;
+    case STATUS_INDICATOR_SENSOR_ERROR:
         color = PURPLE;
         break;
-    case ERROR:
+    case STATUS_INDICATOR_ERROR:
         color = RED;
         break;
-    case WARNING:
+    case STATUS_INDICATOR_WARNING:
         color = YELLOW;
         break;
-    case OK:
+    case STATUS_INDICATOR_OK:
         color = GREEN;
         break;
     default:
-        xSemaphoreGive(esp_led_mutex);
-        return ESP_ERR_INVALID_ARG;
+        color = RED;
+        break;
     }
 
     esp_err_t err;

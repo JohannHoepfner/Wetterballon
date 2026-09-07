@@ -12,6 +12,7 @@
 #include "intercom_task.h"
 #include "nvs_flash.h"
 #include "sd_card.h"
+#include "mock_store.h"
 #include "sdkconfig.h"
 #include "sim_modem.h"
 
@@ -58,7 +59,14 @@ void app_main(void) {
 
     // Initialize central adapters
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
-    ESP_ERROR_CHECK(store->init());
+    esp_err_t store_init_err = store->init();
+    if (store_init_err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize store: %s (0x%x)", esp_err_to_name(store_init_err), store_init_err);
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SD_CARD_ERROR);
+        ESP_LOGW(TAG, "Continuing without store functionality (using mock store)");
+        store = &mock_store;
+        ESP_ERROR_CHECK(store->init());
+    }
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
@@ -79,11 +87,9 @@ void app_main(void) {
         xTaskCreate(intercom_task, "cell_send_telemetry", 4096, &intercom_context, 5, NULL);
     if (intercom_task_created != pdPASS) {
         ESP_LOGE(TAG, "Failed to create intercom task");
-        status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return;
     }
-
-    status_indicator->set_status(status_indicator, OK);
 
     // Initialize sensor tasks
     // -

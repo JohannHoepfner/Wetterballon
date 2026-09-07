@@ -39,6 +39,9 @@ int databus_message_to_send(struct databus_message *in_message, struct databus_m
     case DATABUS_MSG_TYPE_LOG:
         memcpy(out_message->log.message, in_message->log.message, sizeof(in_message->log.message));
         break;
+    case DATABUS_MSG_TYPE_TIMESYNC:
+        out_message->timesync.time = htobe64(in_message->timesync.time);
+        break;
     }
 
     return 0;
@@ -58,6 +61,9 @@ int databus_message_from_recv(struct databus_message *in_message, struct databus
     case DATABUS_MSG_TYPE_LOG:
         memcpy(out_message->log.message, in_message->log.message, sizeof(in_message->log.message));
         out_message->log.message[sizeof(out_message->log.message) - 1] = '\0';
+        break;
+    case DATABUS_MSG_TYPE_TIMESYNC:
+        out_message->timesync.time = be64toh(in_message->timesync.time);
         break;
     }
 

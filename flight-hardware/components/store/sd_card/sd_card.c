@@ -14,6 +14,7 @@ static const char *TAG = "store/sd_card";
 
 Store sd_card = {
     .init = sd_card_init,
+    .reinit = sd_card_reinit,
     .deinit = sd_card_deinit,
     .save = sd_card_write_data,
     .read_lines = sd_card_read_lines,
@@ -21,13 +22,18 @@ Store sd_card = {
 
 sdmmc_card_t *card;
 
+esp_err_t sd_card_reinit(void) {
+    sd_card_deinit();
+    return sd_card_init();
+}
+
 esp_err_t sd_card_init(void) {
-    esp_err_t err;
+    esp_err_t init_err;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false, .max_files = 8, .allocation_unit_size = 8192};
     const char mount_point[] = CONFIG_SD_CARD_MOUNT_POINT;
-    ESP_LOGI(TAG, "Initializing SD card");
+    ESP_LOGI(TAG, "STATUS_INDICATOR_INITIALIZING SD card");
     ESP_LOGI(TAG, "Using SPI peripheral");
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
@@ -41,10 +47,10 @@ esp_err_t sd_card_init(void) {
         .max_transfer_sz = 4000,
     };
 
-    err = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
-    if (err != ESP_OK) {
+    init_err = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
+    if (init_err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize bus");
-        return err;
+        return init_err;
     }
 
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
@@ -52,10 +58,10 @@ esp_err_t sd_card_init(void) {
     slot_config.host_id = host.slot;
 
     ESP_LOGI(TAG, "Mounting filesystem");
-    err = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
+    init_err = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
 
-    if (err != ESP_OK) {
-        if (err == ESP_FAIL) {
+    if (init_err != ESP_OK) {
+        if (init_err == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to mount filesystem. "
                           "If you want the card to be formatted, set the "
                           "CONFIG_SD_CARD_FORMAT_IF_MOUNT_FAILED menuconfig option.");
@@ -63,19 +69,28 @@ esp_err_t sd_card_init(void) {
             ESP_LOGE(TAG,
                      "Failed to initialize the card (%s). "
                      "Make sure SD card lines have pull-up resistors in place.",
-                     esp_err_to_name(err));
+                     esp_err_to_name(init_err));
         }
-        return err;
+        return init_err;
     }
     ESP_LOGI(TAG, "Filesystem mounted");
 
-    sdmmc_card_print_info(stdout, card);
+    // sdmmc_card_print_info(stdout, card);
 
     return ESP_OK;
 }
 
 esp_err_t sd_card_deinit() {
     esp_vfs_fat_sdcard_unmount(CONFIG_SD_CARD_MOUNT_POINT, card);
+    card = NULL;
+
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    esp_err_t err = spi_bus_free(host.slot);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to free SPI bus: %s", esp_err_to_name(err));
+        return err;
+    }
+
     ESP_LOGI(TAG, "Card unmounted");
     return ESP_OK;
 }
@@ -88,9 +103,16 @@ esp_err_t sd_card_write_data(time_t time, char *msg_str) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    fprintf(data_file, "%llu:%s\n", (unsigned long long)time, msg_str);
+    if (fprintf(data_file, "%llu:%s\n", (unsigned long long)time, msg_str) < 0) {
+        ESP_LOGE(TAG, "Failed to write data to file");
+        fclose(data_file);
+        return ESP_FAIL;
+    }
 
-    fclose(data_file);
+    if (fclose(data_file) != 0) {
+        ESP_LOGE(TAG, "Failed to close data file after writing");
+        return ESP_FAIL;
+    }
 
     // ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message='%s'", (unsigned long long)time,
     // DATABUS_MSG_TYPE_DATA, msg_str);

@@ -13,6 +13,7 @@ typedef enum {
 
 #define DATABUS_MSG_TYPE_DATA 0
 #define DATABUS_MSG_TYPE_LOG 1
+#define DATABUS_MSG_TYPE_TIMESYNC 2
 
 struct __attribute__((__packed__)) databus_message {
     uint64_t send_time;
@@ -26,6 +27,9 @@ struct __attribute__((__packed__)) databus_message {
         struct {
             char message[100];
         } log;
+        struct {
+            time_t time;
+        } timesync;
     };
 };
 

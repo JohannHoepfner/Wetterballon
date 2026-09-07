@@ -4,6 +4,8 @@ dependencies:
     override_path: "../../../components/databus/"
   johannh/sd_card:
     override_path: "../../../components/store/sd_card/"
+  johannh/mock_store:
+    override_path: "../../../components/store/mock_store/"
   johannh/esp_led:
     override_path: "../../../components/status_indicator/esp_led/"
   johannh/sim_modem:

@@ -20,7 +20,10 @@ uint64_t mesage_id_counter = 0;
 
 Databus databus = {
     .init = databus_init,
-    .send = databus_send_data,
+    .reinit = databus_reinit,
+    .send_data = databus_send_data,
+    .send_log = databus_send_log,
+    .send_timesync = databus_send_timesync,
     .on_receive = databus_on_receive,
 };
 
@@ -29,16 +32,13 @@ Databus databus = {
 static uint8_t broadcast_mac[ESP_NOW_ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
 
-int set_time(time_t time) {
-    struct timeval tv = {.tv_sec = time, .tv_usec = 0};
-    return settimeofday(&tv, NULL);
-}
-
 #define DATABUS_MAX_NUM_CALLBACKS 32
 void (*data_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
 void (*log_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
+void (*timesync_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
 int num_log_callbacks = 0;
 int num_data_callbacks = 0;
+int num_timesync_callbacks = 0;
 
 void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
     uint8_t *mac_addr = recv_info->src_addr;
@@ -72,8 +72,9 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
 
     switch (msg.type) {
     case DATABUS_MSG_TYPE_DATA:
-        ESP_LOGI(TAG, "Received data message '%.*s' from '%s' with id %llu", sizeof(msg.data.message), msg.data.message,
-                 databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
+        // ESP_LOGI(TAG, "Received data message '%.*s' from '%s' with id %llu", sizeof(msg.data.message),
+        // msg.data.message,
+        //          databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
         for (int i = 0; i < num_data_callbacks; ++i) {
             if (data_callbacks[i] == NULL)
                 continue;
@@ -89,10 +90,21 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
             log_callbacks[i](&msg);
         }
         break;
+    case DATABUS_MSG_TYPE_TIMESYNC:
+        for (int i = 0; i < num_timesync_callbacks; ++i) {
+            if (timesync_callbacks[i] == NULL)
+                continue;
+            timesync_callbacks[i](&msg);
+        }
+        break;
     default:
         ESP_LOGE(TAG, "Received espnow message with invalid type");
         return;
     }
+}
+
+esp_err_t databus_reinit(void) {
+    return databus_init(node_id);
 }
 
 esp_err_t databus_init(uint8_t id) {
@@ -119,7 +131,7 @@ esp_err_t databus_init(uint8_t id) {
     free(peer);
 
     node_id = id;
-    ESP_LOGI(TAG, "Initializing databus with node ID: %llu", (unsigned long long)id);
+    ESP_LOGI(TAG, "STATUS_INDICATOR_INITIALIZING databus with node ID: %llu", (unsigned long long)id);
     return ESP_OK;
 }
 
@@ -135,6 +147,21 @@ esp_err_t databus_send_data(time_t time, char *msg_str) {
         .send_time = time, .type = DATABUS_MSG_TYPE_DATA, .node_id = node_id, .msg_id = mesage_id_counter++};
     strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
 
+    return databus_send(&msg);
+}
+
+esp_err_t databus_send_log(time_t send_time, char *msg_str) {
+    struct databus_message msg = {
+        .send_time = send_time, .type = DATABUS_MSG_TYPE_LOG, .node_id = node_id, .msg_id = mesage_id_counter++};
+    strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
+
+    return databus_send(&msg);
+}
+
+esp_err_t databus_send_timesync(time_t time) {
+    struct databus_message msg = {
+        .send_time = time, .type = DATABUS_MSG_TYPE_TIMESYNC, .node_id = node_id, .msg_id = mesage_id_counter++};
+    msg.timesync.time = time;
     return databus_send(&msg);
 }
 
@@ -158,8 +185,46 @@ esp_err_t databus_on_receive(uint64_t message_type, DatabusReceiveHandler handle
         log_callbacks[num_log_callbacks] = handler;
         num_log_callbacks++;
         break;
+    case DATABUS_MSG_TYPE_TIMESYNC:
+        if (num_timesync_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
+            return ESP_ERR_INVALID_STATE;
+        }
+        timesync_callbacks[num_timesync_callbacks] = handler;
+        num_timesync_callbacks++;
+        break;
     default:
         return ESP_ERR_INVALID_ARG;
     }
     return ESP_OK;
+}
+
+int set_time(time_t time) {
+    struct timeval tv = {.tv_sec = time, .tv_usec = 0};
+    return settimeofday(&tv, NULL);
+}
+
+void on_databus_timesync_default(struct databus_message *message) {
+    if (message == NULL || message->type != DATABUS_MSG_TYPE_TIMESYNC) {
+        ESP_LOGE(TAG, "Invalid databus timesync message");
+        return;
+    }
+
+    time_t new_time = message->timesync.time;
+
+    // ESP_LOGI(TAG, "Received timesync message with time: %ld", (long)new_time);
+
+    esp_err_t err = set_time(new_time);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set time: %s (0x%x)", esp_err_to_name(err), err);
+    }
+}
+
+void on_databus_log_default(struct databus_message *message) {
+    if (message == NULL || message->type != DATABUS_MSG_TYPE_LOG) {
+        ESP_LOGE(TAG, "Invalid databus log message");
+        return;
+    }
+
+    ESP_LOGI(TAG, "Received log message '%.*s' from '%s' with id %llu", sizeof(message->log.message),
+             message->log.message, databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
 }

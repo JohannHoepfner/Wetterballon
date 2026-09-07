@@ -175,7 +175,7 @@ static esp_err_t send_email_once(const char *body, size_t body_len) {
     if (smtp_send(sock,
                   "From: %s\r\n"
                   "To: %s\r\n"
-                  "Subject: Modem POC ping\r\n"
+                  "Subject: Greetings from space\r\n"
                   "\r\n",
                   CONFIG_MODEM_MAIL_FROM, CONFIG_MODEM_MAIL_TO) != ESP_OK) {
         goto out;
@@ -257,7 +257,7 @@ esp_err_t sim_modem_init(void) {
     dte_config.uart_config.cts_io_num = CONFIG_MODEM_UART_CTS_PIN;
     dte_config.uart_config.flow_control = ESP_MODEM_FLOW_CONTROL_NONE;
 
-    ESP_LOGI(TAG, "Initializing esp_modem for the SIM7600 module...");
+    ESP_LOGI(TAG, "STATUS_INDICATOR_INITIALIZING esp_modem for the SIM7600 module...");
     s_dce = esp_modem_new_dev(ESP_MODEM_DCE_SIM7600, &dte_config, &dce_config, s_netif);
     if (s_dce == NULL) {
         sim_modem_deinit();
@@ -287,7 +287,7 @@ esp_err_t sim_modem_init(void) {
     }
 
     // Send test email
-    if (send_email_once("Modem POC ping", strlen("Modem POC ping")) != ESP_OK) {
+    if (send_email_once("Modem init", strlen("Modem init")) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to send test email");
         sim_modem_deinit();
         return ESP_FAIL;
