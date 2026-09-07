@@ -20,7 +20,7 @@
 
 static const char *TAG = "node/sens_env";
 
-Store *store = &mock_store;
+Store *store = &sd_card;
 StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_geiger = &geiger;
 Sensor *sensor_bme280 = &bme280_s;

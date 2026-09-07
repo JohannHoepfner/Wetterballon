@@ -139,6 +139,7 @@ esp_err_t databus_send(struct databus_message *msg) {
     char msg_buf[sizeof(CONFIG_DATABUS_MESSAGE_PREFIX) + sizeof(struct databus_message)];
     databus_message_to_send(msg, (struct databus_message *)(msg_buf + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)));
     memcpy(msg_buf, CONFIG_DATABUS_MESSAGE_PREFIX, sizeof(CONFIG_DATABUS_MESSAGE_PREFIX));
+
     return esp_now_send(broadcast_mac, (const uint8_t *)msg_buf, sizeof(msg_buf));
 }
 
@@ -162,6 +163,9 @@ esp_err_t databus_send_timesync(time_t time) {
     struct databus_message msg = {
         .send_time = time, .type = DATABUS_MSG_TYPE_TIMESYNC, .node_id = node_id, .msg_id = mesage_id_counter++};
     msg.timesync.time = time;
+
+    ESP_LOGD(TAG, "Sending timesync message with time: %ld", (long)time);
+
     return databus_send(&msg);
 }
 
