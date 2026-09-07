@@ -1,4 +1,4 @@
-menu "Sim7600 modem config"
+menu "Radio config"
     config RADIO_AMP_PWK
         int "Pin of the Power Key for Amplifier"
         default 15
@@ -10,8 +10,14 @@ menu "Sim7600 modem config"
         default 7
     config RADIO_FREQ_BASE
         int "Base frequency for sending"
-        default 28090000
+        default 28099870
     config RADIO_FREQ_SHIFT
         int "Shift frequency for sending"
         default 170
+    config RADIO_BIT_US
+        int "Microseconds per RTTY bit"
+        default 22002
+    config RADIO_STOP_BITS
+        int "Number of RTTY stop bits"
+        default 2
 endmenu
