@@ -25,7 +25,8 @@ static void on_databus_data(struct databus_message *message) {
     time_t send_time = message->send_time;
     char *msg_str = message->data.message;
 
-    ESP_LOGI(TAG, "databus data message: %ld:'%s' from '%s' (msg_id: %llu)", (long)send_time, msg_str, databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
+    ESP_LOGI(TAG, "databus data message: %ld:'%s' from '%s' (msg_id: %llu)", (long)send_time, msg_str,
+             databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
 }
 
 static void on_databus_log(struct databus_message *message) {
@@ -37,7 +38,8 @@ static void on_databus_log(struct databus_message *message) {
     time_t send_time = message->send_time;
     char *msg_str = message->log.message;
 
-    ESP_LOGI(TAG, "databus log message: %ld:'%s' from '%s' (msg_id: %llu)", (long)send_time, msg_str, databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
+    ESP_LOGI(TAG, "databus log message: %ld:'%s' from '%s' (msg_id: %llu)", (long)send_time, msg_str,
+             databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
 }
 
 static void on_databus_timesync(struct databus_message *message) {
@@ -48,7 +50,20 @@ static void on_databus_timesync(struct databus_message *message) {
 
     time_t new_time = message->timesync.time;
 
-    ESP_LOGI(TAG, "Received timesync message with time: %ld from '%s' (msg_id: %llu)", (long)new_time, databus_get_node_name(message->node_id), (unsigned long long)message->msg_id );
+    ESP_LOGI(TAG, "Received timesync message with time: %ld from '%s' (msg_id: %llu)", (long)new_time,
+             databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
+}
+
+static void on_databus_any(struct databus_message *message) {
+    if (message == NULL) {
+        ESP_LOGE(TAG, "Invalid databus message");
+        return;
+    }
+
+    time_t send_time = message->send_time;
+
+    ESP_LOGW(TAG, "databus message of type %d at %ld from '%s', (msg_id: %llu)", message->type, (long)send_time,
+             databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
 }
 
 void app_main(void) {
@@ -70,6 +85,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_LOG, on_databus_log));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_TIMESYNC, on_databus_timesync));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR, on_databus_any));
 
     status_indicator->set_status(status_indicator, STATUS_INDICATOR_OK);
 }
