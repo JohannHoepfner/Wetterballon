@@ -1,0 +1,6 @@
+dependencies:
+  idf: ">=5.4.0"
+  johannh/databus:
+    override_path: "../../../components/databus/"
+  johannh/esp_led:
+    override_path: "../../../components/status_indicator/esp_led/"
