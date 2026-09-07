@@ -67,7 +67,7 @@ char *pt1000_read(void) {
     double differential_voltage = get_voltage(&ads, ADS1115_MUX_0_1, ADS1115_FSR_6_144);
     double a3_voltage = get_voltage(&ads, ADS1115_MUX_3_GND, ADS1115_FSR_6_144);
 
-    ESP_LOGI(TAG, "A0-A1 voltage: %.4f V, A3 voltage: %.4f V", differential_voltage, a3_voltage);
+    // ESP_LOGI(TAG, "A0-A1 voltage: %.4f V, A3 voltage: %.4f V", differential_voltage, a3_voltage);
 
     return pt1000_format(differential_voltage, a3_voltage);
 }

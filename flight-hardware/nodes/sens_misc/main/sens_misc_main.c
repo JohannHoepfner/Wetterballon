@@ -19,7 +19,7 @@
 
 static const char *TAG = "node/sens_misc";
 
-Store *store = &mock_store;
+Store *store = &sd_card;
 StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_pt1000 = &pt1000;
 
@@ -67,7 +67,7 @@ void app_main(void) {
         {"pt1000", NULL, NULL, pdMS_TO_TICKS(1000)},
     };
     schedules[0].status_indicator = status_indicator;
-    // schedules[0].sensor = sensor_pt1000;
+    schedules[0].sensor = sensor_pt1000;
     static SensorTaskContext sensor_task_contexts[sizeof(schedules) / sizeof(schedules[0])];
     esp_err_t err = start_sensor_tasks(schedules, sensor_task_contexts, sizeof(schedules) / sizeof(schedules[0]), store,
                                        status_indicator);
