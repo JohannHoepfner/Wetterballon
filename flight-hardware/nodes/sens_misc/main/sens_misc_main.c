@@ -2,6 +2,7 @@
 #include "mock_store.h"
 #include "mock.h"
 #include "pt1000.h"
+#include "bno055_s.h"
 #include "sd_card.h"
 #include "sensor_task.h"
 #include "esp_led.h"
@@ -21,7 +22,7 @@ static const char *TAG = "node/sens_misc";
 
 Store *store = &mock_store;
 StatusIndicator *status_indicator = &esp_led;
-// Sensor *sensor_bmo055 = &bmo055;
+Sensor *sensor_bno055 = &bno055_s;
 Sensor *sensor_pt1000 = &pt1000;
 
 static void on_databus_data(struct databus_message *message) {
@@ -57,8 +58,8 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.init(NODE_ID_SENS_MISC));
 
     // Initialize central adapters
-    ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
+    ESP_ERROR_CHECK(store->init());
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
@@ -66,12 +67,12 @@ void app_main(void) {
     // Initialize sensor tasks
     static SensorSchedule schedules[] = {
         {"pt1000", NULL, NULL, pdMS_TO_TICKS(1000)},
-        {"bmo055", NULL, NULL, pdMS_TO_TICKS(1000)},
+        {"bno055", NULL, NULL, pdMS_TO_TICKS(1000)},
     };
     schedules[0].status_indicator = status_indicator;
-    schedules[0].sensor = sensor_pt1000;
+    // schedules[0].sensor = sensor_pt1000;
     schedules[1].status_indicator = status_indicator;
-    // schedules[1].sensor = sensor_bmo055;
+    schedules[1].sensor = sensor_bno055;
     static SensorTaskContext sensor_task_contexts[sizeof(schedules) / sizeof(schedules[0])];
     esp_err_t err = start_sensor_tasks(schedules, sensor_task_contexts, sizeof(schedules) / sizeof(schedules[0]), store,
                                        status_indicator);

@@ -6,13 +6,13 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
-#include "sim_modem.h"
 #include "databus.h"
-#include "esp_log.h"
-#include "sd_card.h"
-#include "nvs_flash.h"
-#include "sdkconfig.h"
 #include "esp_led.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "sd_card.h"
+#include "sdkconfig.h"
+#include "sim_modem.h"
 
 static const char *TAG = "node/cell_gateway";
 
@@ -53,9 +53,9 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.init(NODE_ID_CELL_GATEWAY));
 
     // Initialize central adapters
+    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
     ESP_ERROR_CHECK(intercom->init());
     ESP_ERROR_CHECK(store->init());
-    ESP_ERROR_CHECK(status_indicator->init(status_indicator));
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));

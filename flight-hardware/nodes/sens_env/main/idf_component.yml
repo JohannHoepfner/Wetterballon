@@ -8,8 +8,6 @@ dependencies:
     override_path: "../../../components/sensor/geiger/"
   johannh/bme280_s:
     override_path: "../../../components/sensor/bme280_s/"
-  johannh/pt1000:
-    override_path: "../../../components/sensor/pt1000/"
   johannh/sd_card:
     override_path: "../../../components/store/sd_card/"
   johannh/mock_store:

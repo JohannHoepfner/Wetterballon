@@ -54,8 +54,8 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.init(NODE_ID_SENS_MOCK));
 
     // Initialize central adapters
-    ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
+    ESP_ERROR_CHECK(store->init());
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));

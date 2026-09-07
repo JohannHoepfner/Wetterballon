@@ -1,0 +1,9 @@
+description: bno055 sensor adapter
+maintainers:
+- Paul Maier <contact@paulmaier.online>
+version: 1.0.0
+license: MIT
+dependencies:
+  idf:
+    version: '>=5.4.0'
+  adithya-187326/bno055: ^1.0.1

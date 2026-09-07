@@ -164,8 +164,8 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.init(NODE_ID_RADIO_GATEWAY));
 
     // Initialize central adapters
-    ESP_ERROR_CHECK(store->init());
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
+    ESP_ERROR_CHECK(store->init());
 
     // Initialize telemetry status -> this is sent periodically via intercom_task (and broadcasted via radio)
     s_telemetry_status.mutex = xSemaphoreCreateMutex();
