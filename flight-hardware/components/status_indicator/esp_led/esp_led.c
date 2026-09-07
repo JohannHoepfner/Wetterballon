@@ -63,10 +63,10 @@ esp_err_t esp_led_set(StatusIndicator *self, Status status) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    // If the current status is already STATUS_INDICATOR_SENSOR_ERROR or STATUS_INDICATOR_STORE_ERROR, we don't want to
-    // change it to another status
+    // Make certain statuses persistent
     if (((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SENSOR_ERROR ||
-        ((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SD_CARD_ERROR) {
+        ((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SD_CARD_ERROR || 
+        ((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_INTERCOM_ERROR) {
         xSemaphoreGive(esp_led_mutex);
         return ESP_OK;
     }
@@ -80,6 +80,9 @@ esp_err_t esp_led_set(StatusIndicator *self, Status status) {
         color = PINK;
         break;
     case STATUS_INDICATOR_SENSOR_ERROR:
+        color = PURPLE;
+        break;
+    case STATUS_INDICATOR_INTERCOM_ERROR:
         color = PURPLE;
         break;
     case STATUS_INDICATOR_ERROR:

@@ -59,7 +59,7 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
         second = localtime(&now)->tm_sec;
     }
 
-    snprintf(buffer, buffer_size, "%02d%02d%02.0f,%.4f,%.4f,%05.0fm,%.0f", hour, minute, second, context->latitude,
+    snprintf(buffer, buffer_size, "%02d%02d%02.0f %02.4f,%02.4f,%05.0f,%+02.0f", hour, minute, second, context->latitude,
              context->longitude, context->altitude, context->temperature);
 }
 
@@ -182,11 +182,15 @@ static void on_databus_data(struct databus_message *message) {
     return;
 }
 
-static IntercomTaskContext intercom_context;
+static IntercomTaskContext intercom_context_telemetry;
+static IntercomTaskContext intercom_context_explanation;
+static IntercomTaskContext intercom_context_greet_emil;
 
 static void on_databus_kill_radio(struct databus_message *message) {
     ESP_LOGE(TAG,"radio star was murdered.");
-    intercom_context.intercom = NULL;
+    intercom_context_telemetry.intercom = NULL;
+    intercom_context_explanation.intercom = NULL;
+    intercom_context_greet_emil.intercom = NULL;
 }
 
 void app_main(void) {
@@ -234,18 +238,50 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR, on_databus_kill_radio));
 
     // Set up intercom task to send last telemetry status periodically via intercom
-    intercom_context.mode = INTERCOM_TASK_MODE_TELEMETRY;
-    intercom_context.intercom = intercom;
-    intercom_context.body = s_intercom_body;
-    intercom_context.body_size = sizeof(s_intercom_body);
-    intercom_context.source.status = &s_telemetry_status;
-    intercom_context.send_interval = pdMS_TO_TICKS(5000);
-    intercom_context.status_indicator = status_indicator;
+    intercom_context_telemetry.mode = INTERCOM_TASK_MODE_TELEMETRY;
+    intercom_context_telemetry.intercom = intercom;
+    intercom_context_telemetry.body = s_intercom_body;
+    intercom_context_telemetry.body_size = sizeof(s_intercom_body);
+    intercom_context_telemetry.source.status = &s_telemetry_status;
+    intercom_context_telemetry.send_interval = pdMS_TO_TICKS(60000); // Send every 60 seconds
+    intercom_context_telemetry.status_indicator = status_indicator;
     BaseType_t intercom_task_created =
-        xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context, 5, NULL);
+        xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context_telemetry, 5, NULL);
     if (intercom_task_created != pdPASS) {
         ESP_LOGE(TAG, "Failed to create intercom task");
-        status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_INTERCOM_ERROR);
+        return;
+    }
+    
+    // Set up intercom task to send explanation message periodically via intercom
+    char *explanation_message = "FORMAT IS TIME KOORD-LAT,KOORD-LONG,TEMP CRC. MORE AT DA0FRA.ALTAFRANER.DE. PRPT VIA EMAIL WELCOME";
+    intercom_context_explanation.mode = INTERCOM_TASK_MODE_TEXT;
+    intercom_context_explanation.intercom = intercom;
+    intercom_context_explanation.body = explanation_message;
+    intercom_context_explanation.body_size = strlen(explanation_message) + 1;
+    intercom_context_explanation.send_interval = pdMS_TO_TICKS(300000); // Send every 5 minutes
+    intercom_context_explanation.status_indicator = status_indicator;
+    BaseType_t intercom_explanation_task_created =
+        xTaskCreate(intercom_task, "radio_send_explanation", 4096, &intercom_context_explanation, 5, NULL);
+    if (intercom_explanation_task_created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create intercom explanation task");
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_INTERCOM_ERROR);
+        return;
+    }
+
+    // Set up intercom task to send greeting message periodically via intercom
+    char *greet_emil_message = "GREETINGS TO DO1ESL";
+    intercom_context_greet_emil.mode = INTERCOM_TASK_MODE_TEXT;
+    intercom_context_greet_emil.intercom = intercom;
+    intercom_context_greet_emil.body = greet_emil_message;
+    intercom_context_greet_emil.body_size = strlen(greet_emil_message) + 1;
+    intercom_context_greet_emil.send_interval = pdMS_TO_TICKS(600000); // Send every 10 minutes
+    intercom_context_greet_emil.status_indicator = status_indicator;
+    BaseType_t intercom_greet_emil_task_created =
+        xTaskCreate(intercom_task, "radio_send_greet_emil", 4096, &intercom_context_greet_emil, 5, NULL);
+    if (intercom_greet_emil_task_created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create intercom greet emil task");
+        status_indicator->set_status(status_indicator, STATUS_INDICATOR_INTERCOM_ERROR);
         return;
     }
 

@@ -13,6 +13,7 @@
 typedef enum {
 	INTERCOM_TASK_MODE_TELEMETRY, // Uses a telemetry context which is updated and sent periodically
 	INTERCOM_TASK_MODE_READ_FROM_STORE, // Reads lines from SD card and sends them via intercom
+	INTERCOM_TASK_MODE_TEXT, // Sends a static text message periodically
 } IntercomTaskMode;
 
 typedef struct {
