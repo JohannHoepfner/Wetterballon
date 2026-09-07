@@ -264,25 +264,33 @@ esp_err_t sim_modem_init(void) {
         return ESP_FAIL;
     }
 
-#if CONFIG_MODEM_NEED_SIM_PIN
-    bool pin_ok = false;
-    if (esp_modem_read_pin(s_dce, &pin_ok) == ESP_OK && !pin_ok) {
-        if (esp_modem_set_pin(s_dce, CONFIG_MODEM_SIM_PIN) != ESP_OK) {
-            sim_modem_deinit();
-            return ESP_FAIL;
-        }
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-#endif
+    esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
 
     int rssi, ber;
     if (esp_modem_get_signal_quality(s_dce, &rssi, &ber) == ESP_OK) {
         ESP_LOGI(TAG, "Signal quality: rssi=%d, ber=%d", rssi, ber);
+    } else {
+        ESP_LOGE(TAG, "Failed to get signal quality");
     }
 
     ESP_LOGI(TAG, "Switching modem to data mode...");
     if (esp_modem_set_mode(s_dce, ESP_MODEM_MODE_DATA) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to switch modem to data mode (possibly mode already set), continuing");
+        sim_modem_deinit();
+        return ESP_FAIL;
+    }
+
+    EventBits_t bits = xEventGroupWaitBits(s_event_group, CONNECT_BIT, pdFALSE, pdFALSE, pdMS_TO_TICKS(60000));
+    if (!(bits & CONNECT_BIT)) {
+        ESP_LOGE(TAG, "Modem did not get an IP within timeout");
+        sim_modem_deinit();
+        return ESP_FAIL;
+    }
+
+    // Send test email
+    if (send_email_once("Modem POC ping", strlen("Modem POC ping")) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send test email");
+        sim_modem_deinit();
+        return ESP_FAIL;
     }
 
     return ESP_OK;

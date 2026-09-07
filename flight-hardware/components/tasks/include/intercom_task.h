@@ -12,7 +12,7 @@
 
 typedef enum {
 	INTERCOM_TASK_MODE_TELEMETRY, // Uses a telemetry context which is updated and sent periodically
-	INTERCOM_TASK_MODE_SD_CARD, // Reads lines from SD card and sends them via intercom
+	INTERCOM_TASK_MODE_READ_FROM_STORE, // Reads lines from SD card and sends them via intercom
 } IntercomTaskMode;
 
 typedef struct {
@@ -36,9 +36,10 @@ typedef struct {
 		struct {
 			Store *store;
 			size_t lines_per_send;
-		} sd_card;
+		} source_store;
 	} source;
     TickType_t send_interval;
+	StatusIndicator *status_indicator;
 } IntercomTaskContext;
 
 IntercomStatusHandler INTERCOM_TASK_MODE_TELEMETRY_handler(IntercomTaskContext *context);

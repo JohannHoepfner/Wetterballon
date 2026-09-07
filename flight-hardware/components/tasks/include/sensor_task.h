@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../sensor/sensor.h"
-#include "../../store/store.h"
 #include "../../status_indicator/status_indicator.h"
+#include "../../store/store.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 

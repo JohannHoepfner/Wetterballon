@@ -16,6 +16,7 @@ Store sd_card = {
     .init = sd_card_init,
     .deinit = sd_card_deinit,
     .save = sd_card_write_data,
+    .read_lines = sd_card_read_lines,
 };
 
 sdmmc_card_t *card;
@@ -93,5 +94,47 @@ esp_err_t sd_card_write_data(time_t time, char *msg_str) {
 
     // ESP_LOGI(TAG, "Saved message to SD card: send_time=%llu, type=%u, message='%s'", (unsigned long long)time,
     // DATABUS_MSG_TYPE_DATA, msg_str);
+    return ESP_OK;
+}
+
+esp_err_t sd_card_read_lines(size_t max_lines, char *buffer, size_t buffer_size, size_t *lines_read) {
+    size_t previous_lines_read = *lines_read;
+    FILE *data_file = fopen(data_file_path, "r");
+    if (data_file == NULL) {
+        ESP_LOGE(TAG, "Failed to open file for reading");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (fseek(data_file, 0, SEEK_SET) != 0) {
+        ESP_LOGE(TAG, "Failed to seek to the beginning of the data file");
+        fclose(data_file);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    for (size_t skipped_lines = 0; skipped_lines < previous_lines_read; skipped_lines++) {
+        int character;
+        do {
+            character = fgetc(data_file);
+        } while (character != '\n' && character != EOF);
+
+        if (character == EOF) {
+            break;
+        }
+    }
+
+    size_t total_bytes_read = 0;
+
+    while (*lines_read < previous_lines_read + max_lines && !feof(data_file)) {
+        if (fgets(buffer + total_bytes_read, buffer_size - total_bytes_read, data_file) == NULL) {
+            break; // EOF or error
+        }
+        total_bytes_read += strlen(buffer + total_bytes_read);
+        (*lines_read)++;
+    }
+
+    fclose(data_file);
+
+    ESP_LOGI(TAG, "Read until line %zu from SD card, total bytes read: %zu", *lines_read, total_bytes_read);
+
     return ESP_OK;
 }

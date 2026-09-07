@@ -8,3 +8,5 @@ dependencies:
     override_path: "../../../components/status_indicator/esp_led/"
   johannh/sim_modem:
     override_path: "../../../components/intercom/sim_modem/"
+  johannh/tasks:
+    override_path: "../../../components/tasks/"

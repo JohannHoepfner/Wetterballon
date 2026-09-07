@@ -9,6 +9,7 @@
 #include "databus.h"
 #include "esp_led.h"
 #include "esp_log.h"
+#include "intercom_task.h"
 #include "nvs_flash.h"
 #include "sd_card.h"
 #include "sdkconfig.h"
@@ -19,6 +20,9 @@ static const char *TAG = "node/cell_gateway";
 Intercom *intercom = &sim_modem;
 Store *store = &sd_card;
 StatusIndicator *status_indicator = &esp_led;
+
+#define TELEMETRY_BODY_SIZE (64 * 1024)
+static char s_intercom_body[TELEMETRY_BODY_SIZE];
 
 static void on_databus_data(struct databus_message *message) {
     if (message == NULL) {
@@ -54,20 +58,32 @@ void app_main(void) {
 
     // Initialize central adapters
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
-    ESP_ERROR_CHECK(intercom->init());
     ESP_ERROR_CHECK(store->init());
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
 
-    status_indicator->set_status(status_indicator, OK);
+    // Set up intercom task to send sd card data via intercom
+    static IntercomTaskContext intercom_context;
+    intercom_context = (IntercomTaskContext){
+        .mode = INTERCOM_TASK_MODE_READ_FROM_STORE,
+        .intercom = intercom,
+        .body = s_intercom_body,
+        .body_size = sizeof(s_intercom_body),
+        .source.source_store.store = store,
+        .source.source_store.lines_per_send = 500,
+        .send_interval = pdMS_TO_TICKS(1000),
+        .status_indicator = status_indicator,
+    };
+    BaseType_t intercom_task_created =
+        xTaskCreate(intercom_task, "cell_send_telemetry", 4096, &intercom_context, 5, NULL);
+    if (intercom_task_created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create intercom task");
+        status_indicator->set_status(status_indicator, UNRECOVERABLE_ERROR);
+        return;
+    }
 
-    // Set up intercom task to send data from sd card via intercom
-    // TODO
-    // BaseType_t task_created = xTaskCreate(send_task, "sim_modem_send", 4096, NULL, 5, NULL);
-    // if (task_created != pdPASS) {
-    //     ESP_LOGE(TAG, "Failed to create modem send task");
-    // }
+    status_indicator->set_status(status_indicator, OK);
 
     // Initialize sensor tasks
     // -

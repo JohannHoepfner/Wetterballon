@@ -8,5 +8,4 @@ typedef struct Store {
     esp_err_t (*deinit)();
     esp_err_t (*save)(time_t time, char *msg_str);
     esp_err_t (*read_lines)(size_t max_lines, char *buffer, size_t buffer_size, size_t *lines_read);
-    esp_err_t (*acknowledge_lines)(size_t lines_read);
 } Store;
