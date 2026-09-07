@@ -68,6 +68,7 @@ void app_main(void) {
 
     // Hook up databus receive callback to save messages to store
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_TIMESYNC, on_databus_timesync_default));
 
     // Initialize sensor tasks
     static SensorSchedule schedules[] = {

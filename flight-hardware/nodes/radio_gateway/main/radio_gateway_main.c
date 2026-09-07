@@ -80,8 +80,6 @@ static void on_gps_data(const char *gps_data) {
                 new_time = mktime(&new_tm);
                 struct timeval tv = {.tv_sec = new_time, .tv_usec = 0};
                 settimeofday(&tv, NULL);
-
-                databus.send_timesync(new_time);
             }
         }
 
@@ -243,13 +241,20 @@ void app_main(void) {
     intercom_context.source.status = &s_telemetry_status;
     intercom_context.send_interval = pdMS_TO_TICKS(5000);
     intercom_context.status_indicator = status_indicator;
-
     BaseType_t intercom_task_created =
         xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context, 5, NULL);
     if (intercom_task_created != pdPASS) {
         ESP_LOGE(TAG, "Failed to create intercom task");
         status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return;
+    }
+
+    // Periodically send timesync messages via databus (to sync all nodes)
+    const TickType_t timesync_interval = pdMS_TO_TICKS(60000);
+    while (true) {
+        time_t now = time(NULL);
+        databus.send_timesync(now);
+        vTaskDelay(timesync_interval);
     }
 
     // Initialize sensor tasks
