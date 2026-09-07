@@ -70,4 +70,6 @@ void app_main(void) {
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_LOG, on_databus_log));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_TIMESYNC, on_databus_timesync));
+
+    status_indicator->set_status(status_indicator, STATUS_INDICATOR_OK);
 }
