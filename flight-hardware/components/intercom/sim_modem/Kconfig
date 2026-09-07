@@ -44,7 +44,7 @@ menu "Sim7600 modem config"
 
     config MODEM_MAIL_TO
         string "Envelope/header To address"
-        default "mail@johann-hoepfner.de"
+        default "wb@johann-hoepfner.de"
 
     config MODEM_SEND_INTERVAL_SEC
         int "Email send interval in seconds"
