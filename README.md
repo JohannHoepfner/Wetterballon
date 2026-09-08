@@ -41,12 +41,3 @@ components/
 | lon | NEO-m8 | Längengrad | ° | neo_m8 |
 | alt | NEO-m8 | Höhe | m (?) | neo_m8 |
 | utc | NEO-m8 | Zeit (UTC) | Uhr | neo_m8 |
-
-
-## TODO
-
-- [x] intercom send task cleanup
-- [x] status indicator leds
-- [ ] cell_gateway read 
-- [ ] sensor adapter for BNO055 -> chip probably broken
-- [ ] adjust format_telemetry_body to Richards specs
