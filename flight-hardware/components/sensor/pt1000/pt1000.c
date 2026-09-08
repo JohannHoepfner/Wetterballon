@@ -55,9 +55,11 @@ double get_voltage(ads1115_t *ads, ads1115_mux_t mux, ads1115_fsr_t fsr) {
 }
 
 esp_err_t pt1000_init(void) {
-
-
-    init_ads();
+    esp_err_t err = init_ads();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize PT1000 sensor: %s (0x%x)", esp_err_to_name(err), err);
+        return err;
+    }
 
     ESP_LOGI(TAG, "PT1000 sensor initialized");
     return ESP_OK;
