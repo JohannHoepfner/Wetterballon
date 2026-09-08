@@ -3,6 +3,7 @@
 #include <esp_err.h>
 #include <esp_log.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 extern esp_err_t gps_init(void);
 extern esp_err_t gps_restart(void);
@@ -61,16 +62,6 @@ char *neo_m8_read(void) {
     if (!gps_read(&latitude, &longitude, &altitude, &hour, &minute, &second, &valid)) {
         ESP_LOGE(TAG, "Failed to read NEO-M8 GPS sensor");
         return "gps_error";
-    }
-
-    if (valid) {
-        invalid_read_count = 0;
-    } else if (++invalid_read_count >= 20) {
-        ESP_LOGW(TAG, "Restarting NEO-M8 GPS after too many invalid reads");
-        invalid_read_count = 0;
-        if (gps_restart() != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to restart NEO-M8 GPS sensor");
-        }
     }
 
     char *formatted_gps = gps_format(latitude, longitude, altitude, hour, minute, second, valid);

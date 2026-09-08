@@ -70,7 +70,7 @@ void app_main(void) {
 
     // Initialize sim_modem (intercom)
     int backoff_sec = 5;
-    while (context->intercom->init() != ESP_OK) {
+    while (intercom->init() != ESP_OK) {
         ESP_LOGE(TAG, "Sim modem initialization failed, retrying in %d s", backoff_sec);
         vTaskDelay(pdMS_TO_TICKS(backoff_sec * 1000));
         backoff_sec = backoff_sec < 300 ? backoff_sec * 2 : 300;
@@ -90,7 +90,7 @@ void app_main(void) {
         .body_size = sizeof(s_intercom_body),
         .source.source_store.store = store,
         .source.source_store.lines_per_send = 500,
-        .send_interval = pdMS_TO_TICKS(1000),
+        .send_interval = pdMS_TO_TICKS(10000),
         .status_indicator = status_indicator,
     };
     BaseType_t intercom_task_created =

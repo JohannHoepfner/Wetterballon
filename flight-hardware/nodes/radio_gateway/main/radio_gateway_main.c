@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <math.h>
 
 #include "esp_led.h"
 #include "esp_log.h"
@@ -61,8 +62,8 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
         second = localtime(&now)->tm_sec;
     }
 
-    snprintf(buffer, buffer_size, "%02d%02d%02.0f %02.4f,%02.4f,%05.0f,%+02.0f", hour, minute, second,
-             context->latitude, context->longitude, context->altitude, context->temperature);
+    snprintf(buffer, buffer_size, "%02d%02d%02.0f %02.4f,%02.4f,%05.0f,%c%02.0f", hour, minute, second,
+             context->latitude, context->longitude, context->altitude, (context->temperature >= 0) ? '0' : '-', fabs(context->temperature));
 }
 
 static void on_gps_data(const char *gps_data) {
@@ -94,6 +95,7 @@ static void on_gps_data(const char *gps_data) {
     int new_hour, new_minute;
     float new_second;
 
+    ESP_LOGI(TAG,"gps str: %s",gps_data);
     int parsed = sscanf(gps_data, "lat=%lf,lon=%lf,alt=%f,utc=%d:%d:%f", &new_latitude, &new_longitude, &new_altitude,
                         &new_hour, &new_minute, &new_second);
 
@@ -108,17 +110,6 @@ static void on_gps_data(const char *gps_data) {
         ESP_LOGW(TAG, "Invalid GPS values: %s", gps_data);
         return;
     }
-
-    time_t new_time = time(NULL);
-    struct tm new_tm = *localtime(&new_time);
-    new_tm.tm_hour = new_hour;
-    new_tm.tm_min = new_minute;
-    new_tm.tm_sec = (int)new_second;
-    new_time = mktime(&new_tm);
-    struct timeval tv = {.tv_sec = new_time, .tv_usec = 0};
-    settimeofday(&tv, NULL);
-
-    databus.send_timesync(new_time);
 
     xSemaphoreTake(s_telemetry_status.mutex, portMAX_DELAY);
 
@@ -303,14 +294,6 @@ void app_main(void) {
         return;
     }
 
-    // Periodically send timesync messages via databus (to sync all nodes)
-    const TickType_t timesync_interval = pdMS_TO_TICKS(60000);
-    while (true) {
-        time_t now = time(NULL);
-        databus.send_timesync(now);
-        vTaskDelay(timesync_interval);
-    }
-
     // Initialize sensor tasks
     static SensorSchedule schedules[] = {
         {"gps", NULL, NULL, pdMS_TO_TICKS(3000)},
@@ -324,5 +307,13 @@ void app_main(void) {
         ESP_LOGE(TAG, "Failed to start sensor tasks: %s (0x%x)", esp_err_to_name(err), err);
         status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return;
+    }
+
+    // Periodically send timesync messages via databus (to sync all nodes)
+    const TickType_t timesync_interval = pdMS_TO_TICKS(60000);
+    while (true) {
+        time_t now = time(NULL);
+        databus.send_timesync(now);
+        vTaskDelay(timesync_interval);
     }
 }
