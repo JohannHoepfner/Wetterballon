@@ -97,7 +97,6 @@ static esp_err_t fsk_setup(void) {
     return ESP_OK;
 }
 
-static i2c_master_dev_handle_t fsk_dev;
 
 static esp_err_t fsk_open(void) {
     esp_err_t e = i2c_master_bus_add_device(si5351_dev.i2c_dev.i2c_bus_handle,
@@ -150,7 +149,7 @@ esp_err_t radio_init(void) {
         return ESP_FAIL;
     }
 
-    si5351_drive_strength(&si5351_dev, SI5351_CLK0, SI5351_DRIVE_2MA);
+    si5351_drive_strength(&si5351_dev, SI5351_CLK0, SI5351_DRIVE_4MA);
 
     fsk_setup();
 
