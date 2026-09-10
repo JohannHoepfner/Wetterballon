@@ -1,4 +1,4 @@
-# Wetterballon-Projekt 2025 am Landesgymnasium Sankt Afra
+# Wetterballon-Projekt 2026 am Landesgymnasium Sankt Afra
 
 ## Firmware-Architektur
 
