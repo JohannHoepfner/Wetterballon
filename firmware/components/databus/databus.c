@@ -34,14 +34,11 @@ static uint8_t broadcast_mac[ESP_NOW_ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
 #define IS_BROADCAST_ADDR(addr) (memcmp(addr, broadcast_mac, ESP_NOW_ETH_ALEN) == 0)
 
 #define DATABUS_MAX_NUM_CALLBACKS 32
-void (*data_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
-void (*log_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
-void (*timesync_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
-void (*kill_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);
-int num_log_callbacks = 0;
-int num_data_callbacks = 0;
-int num_timesync_callbacks = 0;
-int num_kill_callbacks = 0;
+#define DATABUS_MSG_TYPE(no, name, ...)                                                                                \
+    void (*databus_##name##_callbacks[DATABUS_MAX_NUM_CALLBACKS])(struct databus_message *);                           \
+    int num_##name##_callbacks = 0;
+DATABUS_MSG_TYPES
+#undef DATABUS_MSG_TYPE
 
 void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
     uint8_t *mac_addr = recv_info->src_addr;
@@ -67,55 +64,29 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
     struct databus_message msg;
     int err =
         databus_message_from_recv((struct databus_message *)(msg_buf + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)), &msg);
-
     if (err != 0) {
         ESP_LOGE(TAG, "Received invalid espnow message");
         return;
     }
 
     switch (msg.type) {
-    case DATABUS_MSG_TYPE_DATA:
-        // ESP_LOGI(TAG, "Received data message '%.*s' from '%s' with id %llu", sizeof(msg.data.message),
-        // msg.data.message,
-        //          databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
-        for (int i = 0; i < num_data_callbacks; ++i) {
-            if (data_callbacks[i] == NULL)
-                continue;
-            data_callbacks[i](&msg);
-        }
+#define DATABUS_MSG_TYPE(no, name, ...)                                                                                \
+    case DATABUS_MSG_TYPE_##name:                                                                                      \
+        for (int i = 0; i < num_##name##_callbacks; ++i) {                                                             \
+            if (databus_##name##_callbacks[i] == NULL)                                                                 \
+                continue;                                                                                              \
+            databus_##name##_callbacks[i](&msg);                                                                       \
+        }                                                                                                              \
         break;
-    case DATABUS_MSG_TYPE_LOG:
-        ESP_LOGI(TAG, "Received log message '%.*s' from '%s' with id %llu", sizeof(msg.log.message), msg.log.message,
-                 databus_get_node_name(msg.node_id), (unsigned long long)msg.msg_id);
-        for (int i = 0; i < num_log_callbacks; ++i) {
-            if (log_callbacks[i] == NULL)
-                continue;
-            log_callbacks[i](&msg);
-        }
-        break;
-    case DATABUS_MSG_TYPE_TIMESYNC:
-        for (int i = 0; i < num_timesync_callbacks; ++i) {
-            if (timesync_callbacks[i] == NULL)
-                continue;
-            timesync_callbacks[i](&msg);
-        }
-        break;
-    case DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR:
-        for (int i = 0; i < num_kill_callbacks; ++i) {
-            if (kill_callbacks[i] == NULL)
-                continue;
-            kill_callbacks[i](&msg);
-        }
-        break;
+        DATABUS_MSG_TYPES
+#undef DATABUS_MSG_TYPE
     default:
         ESP_LOGE(TAG, "Received espnow message with invalid type");
         return;
     }
 }
 
-esp_err_t databus_reinit(void) {
-    return databus_init(node_id);
-}
+esp_err_t databus_reinit(void) { return databus_init(node_id); }
 
 esp_err_t databus_init(uint8_t id) {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -156,7 +127,7 @@ esp_err_t databus_send(struct databus_message *msg) {
 esp_err_t databus_send_data(time_t time, char *msg_str) {
     struct databus_message msg = {
         .send_time = time, .type = DATABUS_MSG_TYPE_DATA, .node_id = node_id, .msg_id = mesage_id_counter++};
-    strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
+    strncpy((char *)msg.DATA_content.message, msg_str, sizeof(msg.DATA_content.message));
 
     return databus_send(&msg);
 }
@@ -164,7 +135,7 @@ esp_err_t databus_send_data(time_t time, char *msg_str) {
 esp_err_t databus_send_log(time_t send_time, char *msg_str) {
     struct databus_message msg = {
         .send_time = send_time, .type = DATABUS_MSG_TYPE_LOG, .node_id = node_id, .msg_id = mesage_id_counter++};
-    strncpy((char *)msg.data.message, msg_str, sizeof(msg.data.message));
+    strncpy((char *)msg.DATA_content.message, msg_str, sizeof(msg.DATA_content.message));
 
     return databus_send(&msg);
 }
@@ -172,7 +143,7 @@ esp_err_t databus_send_log(time_t send_time, char *msg_str) {
 esp_err_t databus_send_timesync(time_t time) {
     struct databus_message msg = {
         .send_time = time, .type = DATABUS_MSG_TYPE_TIMESYNC, .node_id = node_id, .msg_id = mesage_id_counter++};
-    msg.timesync.time = time;
+    msg.TIMESYNC_content.time = time;
 
     ESP_LOGD(TAG, "Sending timesync message with time: %ld", (long)time);
 
@@ -185,34 +156,16 @@ esp_err_t databus_on_receive(uint64_t message_type, DatabusReceiveHandler handle
     }
 
     switch (message_type) {
-    case DATABUS_MSG_TYPE_DATA:
-        if (num_data_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
-            return ESP_ERR_INVALID_STATE;
-        }
-        data_callbacks[num_data_callbacks] = handler;
-        num_data_callbacks++;
-        break;
-    case DATABUS_MSG_TYPE_LOG:
-        if (num_log_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
-            return ESP_ERR_INVALID_STATE;
-        }
-        log_callbacks[num_log_callbacks] = handler;
-        num_log_callbacks++;
-        break;
-    case DATABUS_MSG_TYPE_TIMESYNC:
-        if (num_timesync_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
-            return ESP_ERR_INVALID_STATE;
-        }
-        timesync_callbacks[num_timesync_callbacks] = handler;
-        num_timesync_callbacks++;
-        break;
-    case DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR:
-        if (num_kill_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {
-            return ESP_ERR_INVALID_STATE;
-        }
-        kill_callbacks[num_kill_callbacks] = handler;
-        num_kill_callbacks++;
-        break;
+#define DATABUS_MSG_TYPE(no, name, ...)                                                                                \
+    case DATABUS_MSG_TYPE_DATA:                                                                                        \
+        if (num_##name##_callbacks >= DATABUS_MAX_NUM_CALLBACKS) {                                                     \
+            return ESP_ERR_INVALID_STATE;                                                                              \
+        }                                                                                                              \
+        databus_##name##_callbacks[num_##name##_callbacks] = handler;                                                  \
+        num_##name##_callbacks++;                                                                                      \
+        break;                                                                                                         \
+        DATABUS_MSG_TYPES
+#undef DATABUS_MSG_TYPE
     default:
         return ESP_ERR_INVALID_ARG;
     }
@@ -230,9 +183,7 @@ void on_databus_timesync_default(struct databus_message *message) {
         return;
     }
 
-    time_t new_time = message->timesync.time;
-
-    // ESP_LOGI(TAG, "Received timesync message with time: %ld", (long)new_time);
+    time_t new_time = message->TIMESYNC_content.time;
 
     esp_err_t err = set_time(new_time);
     if (err != ESP_OK) {
@@ -246,6 +197,7 @@ void on_databus_log_default(struct databus_message *message) {
         return;
     }
 
-    ESP_LOGI(TAG, "Received log message '%.*s' from '%s' with id %llu", sizeof(message->log.message),
-             message->log.message, databus_get_node_name(message->node_id), (unsigned long long)message->msg_id);
+    ESP_LOGI(TAG, "Received log message '%.*s' from '%s' with id %llu", sizeof(message->LOG_content.message),
+             message->LOG_content.message, databus_get_node_name(message->node_id),
+             (unsigned long long)message->msg_id);
 }

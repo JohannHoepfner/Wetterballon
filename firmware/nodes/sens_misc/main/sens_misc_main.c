@@ -1,10 +1,10 @@
 #include "databus.h"
-#include "mock_store.h"
+#include "esp_led.h"
 #include "mock.h"
+#include "mock_store.h"
 #include "pt1000.h"
 #include "sd_card.h"
 #include "sensor_task.h"
-#include "esp_led.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -35,7 +35,7 @@ static void on_databus_data(struct databus_message *message) {
     }
 
     time_t send_time = message->send_time;
-    char *msg_str = message->data.message;
+    char *msg_str = message->DATA_content.message;
 
     esp_err_t err = store->save(send_time, msg_str);
     if (err != ESP_OK) {

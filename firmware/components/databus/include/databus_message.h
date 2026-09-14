@@ -3,18 +3,39 @@
 #include <stdint.h>
 #include <time.h>
 
+#define NODES                                                                                                          \
+    NODE(1, CELL_GATEWAY)                                                                                              \
+    NODE(2, RADIO_GATEWAY)                                                                                             \
+    NODE(3, SENS_ENV)                                                                                                  \
+    NODE(4, SENS_MISC)                                                                                                 \
+    NODE(99, SENS_MOCK)
+
 typedef enum {
-    NODE_ID_CELL_GATEWAY = 1,
-    NODE_ID_RADIO_GATEWAY = 2,
-    NODE_ID_SENS_ENV = 3,
-    NODE_ID_SENS_MISC = 4,
-    NODE_ID_SENS_MOCK = 99,
+#define NODE(no, name) NODE_ID_##name = no,
+    NODES
 } NODE_ID;
 
-#define DATABUS_MSG_TYPE_DATA 0
-#define DATABUS_MSG_TYPE_LOG 1
-#define DATABUS_MSG_TYPE_TIMESYNC 2
-#define DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR 70
+struct databus_message_data_content {
+    char message[100];
+};
+struct databus_message_log_content {
+    char message[100];
+};
+struct databus_message_timesync_content {
+    time_t time;
+};
+
+#define DATABUS_MSG_TYPES                                                                                              \
+    DATABUS_MSG_TYPE(0, DATA, struct { char message[100]; })                                                           \
+    DATABUS_MSG_TYPE(1, LOG, struct { char message[100]; })                                                            \
+    DATABUS_MSG_TYPE(2, TIMESYNC, struct { time_t time; })                                                             \
+    DATABUS_MSG_TYPE(3, KILL_RADIO, struct {})
+
+enum DATABUS_MSG_TYPE {
+#define DATABUS_MSG_TYPE(no, name, ...) DATABUS_MSG_TYPE_##name = no,
+    DATABUS_MSG_TYPES
+#undef DATABUS_MSG_TYPE
+};
 
 struct __attribute__((__packed__)) databus_message {
     uint64_t send_time;
@@ -22,15 +43,9 @@ struct __attribute__((__packed__)) databus_message {
     uint8_t node_id;
     uint64_t msg_id;
     union {
-        struct {
-            char message[100];
-        } data;
-        struct {
-            char message[100];
-        } log;
-        struct {
-            time_t time;
-        } timesync;
+#define DATABUS_MSG_TYPE(no, name, private_data) private_data name##_content;
+        DATABUS_MSG_TYPES
+#undef DATABUS_MSG_TYPE
     };
 };
 

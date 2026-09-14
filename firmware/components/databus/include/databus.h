@@ -8,13 +8,13 @@ typedef struct Databus Databus;
 typedef void (*DatabusReceiveHandler)(struct databus_message *message);
 
 struct Databus {
-	esp_err_t (*init)(uint8_t node_id);
-	esp_err_t (*send_data)(time_t time, char *msg_str);
-	esp_err_t (*send_log)(time_t time, char *msg_str);
-	esp_err_t (*send_timesync)(time_t time);
-	esp_err_t (*on_receive)(uint64_t message_type, DatabusReceiveHandler handler);
-	esp_err_t (*reinit)(void);
-	int radio_killed;
+    esp_err_t (*init)(uint8_t node_id);
+    esp_err_t (*send_data)(time_t time, char *msg_str);
+    esp_err_t (*send_log)(time_t time, char *msg_str);
+    esp_err_t (*send_timesync)(time_t time);
+    esp_err_t (*on_receive)(uint64_t message_type, DatabusReceiveHandler handler);
+    esp_err_t (*reinit)(void);
+    int radio_killed;
 };
 
 esp_err_t databus_reinit(void);

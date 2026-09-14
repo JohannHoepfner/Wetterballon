@@ -1,10 +1,10 @@
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#include <math.h>
 
 #include "esp_led.h"
 #include "esp_log.h"
@@ -63,7 +63,8 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
     }
 
     snprintf(buffer, buffer_size, "%02d%02d%02.0f %02.4f,%02.4f,%05.0f,%c%02.0f", hour, minute, second,
-             context->latitude, context->longitude, context->altitude, (context->temperature >= 0) ? '0' : '-', fabs(context->temperature));
+             context->latitude, context->longitude, context->altitude, (context->temperature >= 0) ? '0' : '-',
+             fabs(context->temperature));
 }
 
 static void on_gps_data(const char *gps_data) {
@@ -95,7 +96,7 @@ static void on_gps_data(const char *gps_data) {
     int new_hour, new_minute;
     float new_second;
 
-    ESP_LOGI(TAG,"gps str: %s",gps_data);
+    ESP_LOGI(TAG, "gps str: %s", gps_data);
     int parsed = sscanf(gps_data, "lat=%lf,lon=%lf,alt=%f,utc=%d:%d:%f", &new_latitude, &new_longitude, &new_altitude,
                         &new_hour, &new_minute, &new_second);
 
@@ -138,7 +139,7 @@ static void on_databus_data(struct databus_message *message) {
     // Also save the message to the store if available
     if (store != NULL) {
         time_t send_time = message->send_time;
-        char *msg_str = message->data.message;
+        char *msg_str = message->DATA_content.message;
         esp_err_t err = store->save(send_time, msg_str);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
@@ -153,7 +154,7 @@ static void on_databus_data(struct databus_message *message) {
     float new_temperature = 0.0f;
 
     // Read temp from databus (sens_misc)
-    const char *temperature_start = strstr(message->data.message, "t1=");
+    const char *temperature_start = strstr(message->DATA_content.message, "t1=");
     if (temperature_start != NULL) {
         new_temperature = strtof(temperature_start + 3, NULL);
     }
@@ -238,7 +239,7 @@ void app_main(void) {
     // Hook up databus receive callback to update telemetry status
     ESP_ERROR_CHECK(sensor_gps->on_receive(on_gps_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
-    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR, on_databus_kill_radio));
+    ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_KILL_RADIO, on_databus_kill_radio));
 
     // Set up intercom task to send last telemetry status periodically via intercom
     intercom_context_telemetry.mode = INTERCOM_TASK_MODE_TELEMETRY;

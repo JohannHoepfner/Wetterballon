@@ -33,7 +33,7 @@ static void on_databus_data(struct databus_message *message) {
     }
 
     time_t send_time = message->send_time;
-    char *msg_str = message->data.message;
+    char *msg_str = message->DATA_content.message;
 
     esp_err_t err = store->save(send_time, msg_str);
     if (err != ESP_OK) {

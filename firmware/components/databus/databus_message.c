@@ -34,13 +34,15 @@ int databus_message_to_send(struct databus_message *in_message, struct databus_m
 
     switch (in_message->type) {
     case DATABUS_MSG_TYPE_DATA:
-        memcpy(out_message->data.message, in_message->data.message, sizeof(in_message->data.message));
+        memcpy(out_message->DATA_content.message, in_message->DATA_content.message,
+               sizeof(in_message->DATA_content.message));
         break;
     case DATABUS_MSG_TYPE_LOG:
-        memcpy(out_message->log.message, in_message->log.message, sizeof(in_message->log.message));
+        memcpy(out_message->LOG_content.message, in_message->LOG_content.message,
+               sizeof(in_message->LOG_content.message));
         break;
     case DATABUS_MSG_TYPE_TIMESYNC:
-        out_message->timesync.time = htobe64(in_message->timesync.time);
+        out_message->TIMESYNC_content.time = htobe64(in_message->TIMESYNC_content.time);
         break;
     }
 
@@ -55,15 +57,17 @@ int databus_message_from_recv(struct databus_message *in_message, struct databus
 
     switch (out_message->type) {
     case DATABUS_MSG_TYPE_DATA:
-        memcpy(out_message->data.message, in_message->data.message, sizeof(in_message->data.message));
-        out_message->data.message[sizeof(out_message->data.message) - 1] = '\0';
+        memcpy(out_message->DATA_content.message, in_message->DATA_content.message,
+               sizeof(in_message->DATA_content.message));
+        out_message->DATA_content.message[sizeof(out_message->DATA_content.message) - 1] = '\0';
         break;
     case DATABUS_MSG_TYPE_LOG:
-        memcpy(out_message->log.message, in_message->log.message, sizeof(in_message->log.message));
-        out_message->log.message[sizeof(out_message->log.message) - 1] = '\0';
+        memcpy(out_message->LOG_content.message, in_message->LOG_content.message,
+               sizeof(in_message->LOG_content.message));
+        out_message->LOG_content.message[sizeof(out_message->LOG_content.message) - 1] = '\0';
         break;
     case DATABUS_MSG_TYPE_TIMESYNC:
-        out_message->timesync.time = be64toh(in_message->timesync.time);
+        out_message->TIMESYNC_content.time = be64toh(in_message->TIMESYNC_content.time);
         break;
     }
 

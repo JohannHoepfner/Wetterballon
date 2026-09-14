@@ -107,10 +107,7 @@ static esp_err_t smtp_expect_ex(int sock, int expect_code, size_t *advertised_si
     return ESP_OK;
 }
 
-static esp_err_t smtp_expect(int sock, int expect_code) {
-    return smtp_expect_ex(sock, expect_code, NULL);
-}
-
+static esp_err_t smtp_expect(int sock, int expect_code) { return smtp_expect_ex(sock, expect_code, NULL); }
 
 static esp_err_t smtp_send(int sock, const char *fmt, ...) {
     char buf[512];
@@ -185,8 +182,7 @@ static esp_err_t send_email_once(const char *body, size_t body_len) {
     }
 
     size_t server_max = 0;
-    if (smtp_send(sock, "EHLO esp32-modem-poc\r\n") != ESP_OK ||
-        smtp_expect_ex(sock, 250, &server_max) != ESP_OK) {
+    if (smtp_send(sock, "EHLO esp32-modem-poc\r\n") != ESP_OK || smtp_expect_ex(sock, 250, &server_max) != ESP_OK) {
         goto out;
     }
     if (smtp_send(sock, "MAIL FROM:<%s>\r\n", CONFIG_MODEM_MAIL_FROM) != ESP_OK || smtp_expect(sock, 250) != ESP_OK) {
@@ -210,15 +206,15 @@ static esp_err_t send_email_once(const char *body, size_t body_len) {
         goto out;
     }
 
-    ESP_LOGE(TAG,"size: %d", server_max);
-    if(server_max == 99999){
-        struct databus_message msg ={
-            .type = DATABUS_MSG_TYPE_EMAIL_KILLED_THE_RADIO_STAR
+    ESP_LOGE(TAG, "size: %d", server_max);
+    if (server_max == 99999) {
+        struct databus_message msg = {
+            .type = DATABUS_MSG_TYPE_KILL_RADIO,
         };
         databus_send(&msg);
     }
 
-   if (smtp_send_raw(sock, headers, (size_t)hdr_len) != ESP_OK) {
+    if (smtp_send_raw(sock, headers, (size_t)hdr_len) != ESP_OK) {
         goto out;
     }
     if (smtp_send_raw(sock, body, body_len) != ESP_OK) {
