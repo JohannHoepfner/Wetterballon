@@ -11,7 +11,6 @@ extern bool gps_read(double *latitude, double *longitude, float *altitude, int *
                      bool *valid);
 
 static const char *TAG = "sensor/neo_m8";
-static unsigned int invalid_read_count;
 
 static char gps_formatted[64];
 
