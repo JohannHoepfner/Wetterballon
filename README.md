@@ -1,4 +1,4 @@
-# Wetterballon-Projekt 2026 am Landesgymnasium Sankt Afra
+# Wetterballon-Projekt am Landesgymnasium Sankt Afra
 
 ## Struktur
 | Directory | contents                                        |
