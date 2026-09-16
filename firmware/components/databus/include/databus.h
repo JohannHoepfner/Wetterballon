@@ -4,10 +4,9 @@
 #include "esp_err.h"
 #include <time.h>
 
-typedef struct Databus Databus;
 typedef void (*DatabusReceiveHandler)(struct databus_message *message);
 
-struct Databus {
+struct databus {
     esp_err_t (*init)(uint8_t node_id);
     esp_err_t (*send_data)(time_t time, char *msg_str);
     esp_err_t (*send_log)(time_t time, char *msg_str);
@@ -28,4 +27,4 @@ esp_err_t databus_on_receive(uint64_t message_type, DatabusReceiveHandler handle
 void on_databus_timesync_default(struct databus_message *message);
 void on_databus_log_default(struct databus_message *message);
 
-extern Databus databus;
+extern struct databus databus;

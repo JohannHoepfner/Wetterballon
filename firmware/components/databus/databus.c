@@ -19,7 +19,7 @@ static const char *TAG = "databus";
 uint8_t node_id = 0;
 uint64_t mesage_id_counter = 0;
 
-Databus databus = {
+struct databus databus = {
     .init = databus_init,
     .reinit = databus_reinit,
     .send_data = databus_send_data,
