@@ -40,8 +40,9 @@ static const char *TAG = "si5351";
 
 /////////////////////////////// I2C functions ///////////////////////////////
 
-int8_t si5351_i2c_init(si5351_t *si5351_dev, i2c_port_num_t port, gpio_num_t sda_gpio, gpio_num_t scl_gpio,
-                       uint32_t clk_speed) {
+int8_t
+si5351_i2c_init(si5351_t *si5351_dev, i2c_port_num_t port, gpio_num_t sda_gpio, gpio_num_t scl_gpio,
+                uint32_t clk_speed) {
     si5351_dev->i2c_dev.i2c_bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
     si5351_dev->i2c_dev.i2c_bus_config.i2c_port = I2C_NUM_0;
     si5351_dev->i2c_dev.i2c_bus_config.scl_io_num = scl_gpio;
@@ -70,7 +71,8 @@ int8_t si5351_i2c_init(si5351_t *si5351_dev, i2c_port_num_t port, gpio_num_t sda
     return ESP_OK;
 }
 
-static int8_t si5351_i2c_read(si5351_t *si5351_dev, uint8_t addr) {
+static int8_t
+si5351_i2c_read(si5351_t *si5351_dev, uint8_t addr) {
     uint8_t val = 0;
 
     if (i2c_master_bus_add_device(si5351_dev->i2c_dev.i2c_bus_handle, &(si5351_dev->i2c_dev.i2c_dev_conf),
@@ -90,7 +92,8 @@ static int8_t si5351_i2c_read(si5351_t *si5351_dev, uint8_t addr) {
     return val;
 }
 
-static uint8_t si5351_i2c_write(si5351_t *si5351_dev, uint8_t addr, uint8_t data) {
+static uint8_t
+si5351_i2c_write(si5351_t *si5351_dev, uint8_t addr, uint8_t data) {
     uint8_t dataw[2];
 
     dataw[0] = addr;
@@ -112,7 +115,8 @@ static uint8_t si5351_i2c_write(si5351_t *si5351_dev, uint8_t addr, uint8_t data
     return ESP_OK;
 }
 
-static inline uint8_t si5351_i2c_write_bulk(si5351_t *si5351_dev, uint8_t addr, uint8_t bytes, uint8_t *data) {
+static inline uint8_t
+si5351_i2c_write_bulk(si5351_t *si5351_dev, uint8_t addr, uint8_t bytes, uint8_t *data) {
     uint8_t dataw[bytes + 1];
 
     dataw[0] = addr;
@@ -134,8 +138,9 @@ static inline uint8_t si5351_i2c_write_bulk(si5351_t *si5351_dev, uint8_t addr, 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static uint64_t si5351_pll_calc(si5351_t *si5351_dev, enum si5351_pll pll, uint64_t freq, struct si5351_reg_set *reg,
-                                int32_t correction, uint8_t vcxo) {
+static uint64_t
+si5351_pll_calc(si5351_t *si5351_dev, enum si5351_pll pll, uint64_t freq, struct si5351_reg_set *reg,
+                int32_t correction, uint8_t vcxo) {
     uint64_t ref_freq;
     if (pll == SI5351_PLLA) {
         ref_freq = si5351_dev->si5351_xtal_freq[(uint8_t)si5351_dev->plla_ref_osc] * SI5351_FREQ_MULT;
@@ -206,7 +211,8 @@ static uint64_t si5351_pll_calc(si5351_t *si5351_dev, enum si5351_pll pll, uint6
     }
 }
 
-static uint64_t si5351_multisynth_calc(uint64_t freq, uint64_t pll_freq, struct si5351_reg_set *reg) {
+static uint64_t
+si5351_multisynth_calc(uint64_t freq, uint64_t pll_freq, struct si5351_reg_set *reg) {
     uint64_t lltmp;
     uint32_t a, b, c, p1, p2, p3;
     uint8_t divby4 = 0;
@@ -282,7 +288,8 @@ static uint64_t si5351_multisynth_calc(uint64_t freq, uint64_t pll_freq, struct 
     }
 }
 
-static uint64_t si5351_multisynth67_calc(uint64_t freq, uint64_t pll_freq, struct si5351_reg_set *reg) {
+static uint64_t
+si5351_multisynth67_calc(uint64_t freq, uint64_t pll_freq, struct si5351_reg_set *reg) {
     uint32_t a;
     uint64_t lltmp;
 
@@ -350,7 +357,8 @@ static uint64_t si5351_multisynth67_calc(uint64_t freq, uint64_t pll_freq, struc
     }
 }
 
-static void si5351_update_sys_status(si5351_t *si5351_dev) {
+static void
+si5351_update_sys_status(si5351_t *si5351_dev) {
     uint8_t reg_val = 0;
 
     reg_val = si5351_i2c_read(si5351_dev, SI5351_DEVICE_STATUS);
@@ -363,7 +371,8 @@ static void si5351_update_sys_status(si5351_t *si5351_dev) {
     si5351_dev->si5351_dev_status.REVID = reg_val & 0x03;
 }
 
-static void si5351_update_int_status(si5351_t *si5351_dev) {
+static void
+si5351_update_int_status(si5351_t *si5351_dev) {
     uint8_t reg_val = 0;
 
     reg_val = si5351_i2c_read(si5351_dev, SI5351_INTERRUPT_STATUS);
@@ -375,7 +384,8 @@ static void si5351_update_int_status(si5351_t *si5351_dev) {
     si5351_dev->si5351_dev_int_status.LOS_STKY = (reg_val >> 4) & 0x01;
 }
 
-static void si5351_ms_div(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t r_div, uint8_t div_by_4) {
+static void
+si5351_ms_div(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t r_div, uint8_t div_by_4) {
     uint8_t reg_val = 0;
     uint8_t reg_addr = 0;
 
@@ -434,7 +444,8 @@ static void si5351_ms_div(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t r
     si5351_i2c_write(si5351_dev, reg_addr, reg_val);
 }
 
-static uint8_t si5351_select_r_div(uint64_t *freq) {
+static uint8_t
+si5351_select_r_div(uint64_t *freq) {
     uint8_t r_div = SI5351_OUTPUT_CLK_DIV_1;
 
     // Choose the correct R divider
@@ -471,7 +482,8 @@ static uint8_t si5351_select_r_div(uint64_t *freq) {
     return r_div;
 }
 
-static uint8_t si5351_select_r_div_ms67(uint64_t *freq) {
+static uint8_t
+si5351_select_r_div_ms67(uint64_t *freq) {
     uint8_t r_div = SI5351_OUTPUT_CLK_DIV_1;
 
     // Choose the correct R divider
@@ -510,7 +522,8 @@ static uint8_t si5351_select_r_div_ms67(uint64_t *freq) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-esp_err_t si5351_init(si5351_t *si5351_dev, uint8_t xtal_load_c, uint32_t xo_freq, int32_t corr) {
+esp_err_t
+si5351_init(si5351_t *si5351_dev, uint8_t xtal_load_c, uint32_t xo_freq, int32_t corr) {
     uint8_t reg_val = 0;
 
     si5351_dev->si5351_dev_status.SYS_INIT = 0;
@@ -558,7 +571,8 @@ esp_err_t si5351_init(si5351_t *si5351_dev, uint8_t xtal_load_c, uint32_t xo_fre
     return ESP_FAIL;
 }
 
-void si5351_reset(si5351_t *si5351_dev) {
+void
+si5351_reset(si5351_t *si5351_dev) {
     // Initialize the CLK outputs according to flowchart in datasheet
     // First, turn them off
     si5351_i2c_write(si5351_dev, 16, 0x80);
@@ -621,12 +635,14 @@ void si5351_reset(si5351_t *si5351_dev) {
     }
 }
 
-void si5351_fast_reset(si5351_t *si5351_dev) {
+void
+si5351_fast_reset(si5351_t *si5351_dev) {
     // This soft-resets PLL A & B (32 + 128) in just one step
     si5351_i2c_write(si5351_dev, SI5351_PLL_RESET, 0xA0);
 }
 
-bool si5351_set_freq(si5351_t *si5351_dev, uint64_t freq, enum si5351_clock clk) {
+bool
+si5351_set_freq(si5351_t *si5351_dev, uint64_t freq, enum si5351_clock clk) {
     struct si5351_reg_set ms_reg;
     uint64_t pll_freq;
     uint8_t int_mode = 0;
@@ -825,7 +841,8 @@ bool si5351_set_freq(si5351_t *si5351_dev, uint64_t freq, enum si5351_clock clk)
     }
 }
 
-bool si5351_set_freq_manual(si5351_t *si5351_dev, uint64_t freq, uint64_t pll_freq, enum si5351_clock clk) {
+bool
+si5351_set_freq_manual(si5351_t *si5351_dev, uint64_t freq, uint64_t pll_freq, enum si5351_clock clk) {
     struct si5351_reg_set ms_reg;
     uint8_t int_mode = 0;
     uint8_t div_by_4 = 0;
@@ -867,7 +884,8 @@ bool si5351_set_freq_manual(si5351_t *si5351_dev, uint64_t freq, uint64_t pll_fr
     return true;
 }
 
-void si5351_set_pll(si5351_t *si5351_dev, uint64_t pll_freq, enum si5351_pll target_pll) {
+void
+si5351_set_pll(si5351_t *si5351_dev, uint64_t pll_freq, enum si5351_pll target_pll) {
     struct si5351_reg_set pll_reg;
 
     if (target_pll == SI5351_PLLA) {
@@ -925,8 +943,9 @@ void si5351_set_pll(si5351_t *si5351_dev, uint64_t pll_freq, enum si5351_pll tar
     }
 }
 
-void si5351_set_ms(si5351_t *si5351_dev, enum si5351_clock clk, struct si5351_reg_set ms_reg, uint8_t int_mode,
-                   uint8_t r_div, uint8_t div_by_4) {
+void
+si5351_set_ms(si5351_t *si5351_dev, enum si5351_clock clk, struct si5351_reg_set ms_reg, uint8_t int_mode,
+              uint8_t r_div, uint8_t div_by_4) {
     uint8_t params[20];
     uint8_t i = 0;
     uint8_t temp;
@@ -1012,7 +1031,8 @@ void si5351_set_ms(si5351_t *si5351_dev, enum si5351_clock clk, struct si5351_re
     }
 }
 
-void si5351_output_enable(si5351_t *si5351_dev, enum si5351_clock clk, bool enable) {
+void
+si5351_output_enable(si5351_t *si5351_dev, enum si5351_clock clk, bool enable) {
     uint8_t reg_val;
 
     reg_val = si5351_i2c_read(si5351_dev, SI5351_OUTPUT_ENABLE_CTRL);
@@ -1026,7 +1046,8 @@ void si5351_output_enable(si5351_t *si5351_dev, enum si5351_clock clk, bool enab
     si5351_i2c_write(si5351_dev, SI5351_OUTPUT_ENABLE_CTRL, reg_val);
 }
 
-void si5351_drive_strength(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_drive drive) {
+void
+si5351_drive_strength(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_drive drive) {
     uint8_t reg_val;
     const uint8_t mask = 0x03;
 
@@ -1053,12 +1074,14 @@ void si5351_drive_strength(si5351_t *si5351_dev, enum si5351_clock clk, enum si5
     si5351_i2c_write(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
 }
 
-void si5351_update_status(si5351_t *si5351_dev) {
+void
+si5351_update_status(si5351_t *si5351_dev) {
     si5351_update_sys_status(si5351_dev);
     si5351_update_int_status(si5351_dev);
 }
 
-void si5351_set_correction(si5351_t *si5351_dev, int32_t corr, enum si5351_pll_input ref_osc) {
+void
+si5351_set_correction(si5351_t *si5351_dev, int32_t corr, enum si5351_pll_input ref_osc) {
     si5351_dev->si5351_ref_correction[(uint8_t)ref_osc] = corr;
 
     // Recalculate and set PLL freqs based on correction value
@@ -1067,18 +1090,21 @@ void si5351_set_correction(si5351_t *si5351_dev, int32_t corr, enum si5351_pll_i
     si5351_set_pll(si5351_dev, si5351_dev->si5351_pllb_freq, SI5351_PLLB);
 }
 
-void si5351_set_phase(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t phase) {
+void
+si5351_set_phase(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t phase) {
     // Mask off the upper bit since it is reserved
     phase = phase & 0b01111111;
 
     si5351_i2c_write(si5351_dev, SI5351_CLK0_PHASE_OFFSET + (uint8_t)clk, phase);
 }
 
-int32_t si5351_get_correction(si5351_t *si5351_dev, enum si5351_pll_input ref_osc) {
+int32_t
+si5351_get_correction(si5351_t *si5351_dev, enum si5351_pll_input ref_osc) {
     return si5351_dev->si5351_ref_correction[(uint8_t)ref_osc];
 }
 
-void si5351_pll_reset(si5351_t *si5351_dev, enum si5351_pll target_pll) {
+void
+si5351_pll_reset(si5351_t *si5351_dev, enum si5351_pll target_pll) {
     if (target_pll == SI5351_PLLA) {
         si5351_i2c_write(si5351_dev, SI5351_PLL_RESET, SI5351_PLL_RESET_A);
     } else if (target_pll == SI5351_PLLB) {
@@ -1086,7 +1112,8 @@ void si5351_pll_reset(si5351_t *si5351_dev, enum si5351_pll target_pll) {
     }
 }
 
-void si5351_set_ms_source(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_pll pll) {
+void
+si5351_set_ms_source(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_pll pll) {
     uint8_t reg_val;
 
     reg_val = si5351_i2c_read(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk);
@@ -1102,7 +1129,8 @@ void si5351_set_ms_source(si5351_t *si5351_dev, enum si5351_clock clk, enum si53
     si5351_dev->pll_assignment[(uint8_t)clk] = pll;
 }
 
-void si5351_set_int(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t enable) {
+void
+si5351_set_int(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t enable) {
     uint8_t reg_val;
     reg_val = si5351_i2c_read(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk);
 
@@ -1132,7 +1160,8 @@ void si5351_set_int(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t enable)
      */
 }
 
-void si5351_set_clock_pwr(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t pwr) {
+void
+si5351_set_clock_pwr(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t pwr) {
     uint8_t reg_val; //, reg;
     reg_val = si5351_i2c_read(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk);
 
@@ -1145,7 +1174,8 @@ void si5351_set_clock_pwr(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t p
     si5351_i2c_write(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
 }
 
-void si5351_set_clock_invert(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t inv) {
+void
+si5351_set_clock_invert(si5351_t *si5351_dev, enum si5351_clock clk, uint8_t inv) {
     uint8_t reg_val;
     reg_val = si5351_i2c_read(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk);
 
@@ -1158,7 +1188,8 @@ void si5351_set_clock_invert(si5351_t *si5351_dev, enum si5351_clock clk, uint8_
     si5351_i2c_write(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
 }
 
-void si5351_set_clock_source(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_clock_source src) {
+void
+si5351_set_clock_source(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_clock_source src) {
     uint8_t reg_val;
     reg_val = si5351_i2c_read(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk);
 
@@ -1189,7 +1220,8 @@ void si5351_set_clock_source(si5351_t *si5351_dev, enum si5351_clock clk, enum s
     si5351_i2c_write(si5351_dev, SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
 }
 
-void si5351_set_clock_disable(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_clock_disable dis_state) {
+void
+si5351_set_clock_disable(si5351_t *si5351_dev, enum si5351_clock clk, enum si5351_clock_disable dis_state) {
     uint8_t reg_val, reg = SI5351_CLK3_0_DISABLE_STATE;
 
     if (clk >= SI5351_CLK0 && clk <= SI5351_CLK3) {
@@ -1212,7 +1244,8 @@ void si5351_set_clock_disable(si5351_t *si5351_dev, enum si5351_clock clk, enum 
     si5351_i2c_write(si5351_dev, reg, reg_val);
 }
 
-void si5351_set_clock_fanout(si5351_t *si5351_dev, enum si5351_clock_fanout fanout, uint8_t enable) {
+void
+si5351_set_clock_fanout(si5351_t *si5351_dev, enum si5351_clock_fanout fanout, uint8_t enable) {
     uint8_t reg_val;
     reg_val = si5351_i2c_read(si5351_dev, SI5351_FANOUT_ENABLE);
 
@@ -1243,7 +1276,8 @@ void si5351_set_clock_fanout(si5351_t *si5351_dev, enum si5351_clock_fanout fano
     si5351_i2c_write(si5351_dev, SI5351_FANOUT_ENABLE, reg_val);
 }
 
-void si5351_set_pll_input(si5351_t *si5351_dev, enum si5351_pll pll, enum si5351_pll_input input) {
+void
+si5351_set_pll_input(si5351_t *si5351_dev, enum si5351_pll pll, enum si5351_pll_input input) {
     uint8_t reg_val;
     reg_val = si5351_i2c_read(si5351_dev, SI5351_PLL_INPUT_SOURCE);
 
@@ -1281,7 +1315,8 @@ void si5351_set_pll_input(si5351_t *si5351_dev, enum si5351_pll pll, enum si5351
     si5351_set_pll(si5351_dev, si5351_dev->si5351_pllb_freq, SI5351_PLLB);
 }
 
-void si5351_set_vcxo(si5351_t *si5351_dev, uint64_t pll_freq, uint8_t ppm) {
+void
+si5351_set_vcxo(si5351_t *si5351_dev, uint64_t pll_freq, uint8_t ppm) {
     struct si5351_reg_set pll_reg;
     uint64_t vcxo_param;
 
@@ -1351,7 +1386,8 @@ void si5351_set_vcxo(si5351_t *si5351_dev, uint64_t pll_freq, uint8_t ppm) {
     si5351_i2c_write(si5351_dev, SI5351_VXCO_PARAMETERS_HIGH, temp);
 }
 
-void si5351_set_ref_freq(si5351_t *si5351_dev, uint32_t ref_freq, enum si5351_pll_input ref_osc) {
+void
+si5351_set_ref_freq(si5351_t *si5351_dev, uint32_t ref_freq, enum si5351_pll_input ref_osc) {
     // uint8_t reg_val;
     // reg_val = si5351_read(SI5351_PLL_INPUT_SOURCE);
 
@@ -1383,7 +1419,8 @@ void si5351_set_ref_freq(si5351_t *si5351_dev, uint32_t ref_freq, enum si5351_pl
     // si5351_write(SI5351_PLL_INPUT_SOURCE, reg_val);
 }
 
-void si5351_spread_spectrum(si5351_t *si5351_dev, bool enabled) {
+void
+si5351_spread_spectrum(si5351_t *si5351_dev, bool enabled) {
     uint8_t regval = si5351_i2c_read(si5351_dev, SI5351_SSC_PARAM0);
     if (enabled) {
         regval |= 0x80;
@@ -1393,7 +1430,8 @@ void si5351_spread_spectrum(si5351_t *si5351_dev, bool enabled) {
     si5351_i2c_write(si5351_dev, SI5351_SSC_PARAM0, regval);
 }
 
-void si5351_set_freq2(si5351_t *si5351_dev, uint64_t freq, enum si5351_clock clk) {
+void
+si5351_set_freq2(si5351_t *si5351_dev, uint64_t freq, enum si5351_clock clk) {
     // this is the work value, with the correction applied via the correction()
     // procedure
     uint32_t int_xtal = SI5351_XTAL_FREQ;
@@ -1555,9 +1593,10 @@ void si5351_set_freq2(si5351_t *si5351_dev, uint64_t freq, enum si5351_clock clk
     }
 }
 
-void si5351_calc(si5351_t *si5351_dev, int32_t fclk, int32_t corr, int32_t *pll_mult, int32_t *pll_num,
-                 int32_t *pll_denom, int32_t *out_div, int32_t *out_num, int32_t *out_denom, uint8_t *out_rdiv,
-                 uint8_t *out_allow_integer_mode) {
+void
+si5351_calc(si5351_t *si5351_dev, int32_t fclk, int32_t corr, int32_t *pll_mult, int32_t *pll_num, int32_t *pll_denom,
+            int32_t *out_div, int32_t *out_num, int32_t *out_denom, uint8_t *out_rdiv,
+            uint8_t *out_allow_integer_mode) {
     // Here we are looking for integer values of a,b,c,x,y,z such as:
     // N = a + b / c    # pll settings
     // M = x + y / z    # ms  settings
@@ -1629,9 +1668,10 @@ void si5351_calc(si5351_t *si5351_dev, int32_t fclk, int32_t corr, int32_t *pll_
     *out_denom = z;
 }
 
-void si5351_calc_iq(si5351_t *si5351_dev, int32_t fclk, int32_t corr, int32_t *pll_mult, int32_t *pll_num,
-                    int32_t *pll_denom, int32_t *out_div, int32_t *out_num, int32_t *out_denom, uint8_t *out_rdiv,
-                    uint8_t *out_allow_integer_mode) {
+void
+si5351_calc_iq(si5351_t *si5351_dev, int32_t fclk, int32_t corr, int32_t *pll_mult, int32_t *pll_num,
+               int32_t *pll_denom, int32_t *out_div, int32_t *out_num, int32_t *out_denom, uint8_t *out_rdiv,
+               uint8_t *out_allow_integer_mode) {
     int32_t fpll;
 
     if (fclk < 1400000)

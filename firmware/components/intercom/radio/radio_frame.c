@@ -16,7 +16,8 @@ typedef struct {
 
 static size_and_figs write_rtty_to_buffer(const char *input, size_t len, char *output, bool start_figs);
 
-radio_frame radio_encode_frame(char *input, size_t len, bool append_crc) {
+radio_frame
+radio_encode_frame(char *input, size_t len, bool append_crc) {
     radio_frame message = {0};
     /*
      * Worst case:
@@ -72,7 +73,8 @@ radio_frame radio_encode_frame(char *input, size_t len, bool append_crc) {
     return message;
 }
 
-static size_and_figs write_rtty_to_buffer(const char *input, const size_t len, char *output, const bool start_figs) {
+static size_and_figs
+write_rtty_to_buffer(const char *input, const size_t len, char *output, const bool start_figs) {
     size_and_figs stats = {.len = 0, .is_figs = start_figs};
     for (size_t i = 0; i < len; i++) {
         char curr_letter = input[i];

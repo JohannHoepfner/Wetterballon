@@ -27,7 +27,8 @@ StatusIndicator esp_led = {
     .set_status = esp_led_set,
 };
 
-esp_err_t esp_led_init(StatusIndicator *self) {
+esp_err_t
+esp_led_init(StatusIndicator *self) {
     esp_led_mutex = xSemaphoreCreateMutex();
     if (esp_led_mutex == NULL) {
         return ESP_ERR_NO_MEM;
@@ -58,7 +59,8 @@ esp_err_t esp_led_init(StatusIndicator *self) {
     return ESP_OK;
 }
 
-esp_err_t esp_led_set(StatusIndicator *self, Status status) {
+esp_err_t
+esp_led_set(StatusIndicator *self, Status status) {
     if (esp_led_mutex == NULL || xSemaphoreTake(esp_led_mutex, portMAX_DELAY) != pdTRUE) {
         return ESP_ERR_INVALID_STATE;
     }

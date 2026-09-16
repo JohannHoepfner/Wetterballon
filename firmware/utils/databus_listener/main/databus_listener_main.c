@@ -9,10 +9,17 @@
 
 static const char *TAG = "espnow_listener";
 
-void espnow_recv_callback_log(struct databus_message *msg) { ESP_LOGI(TAG, "LOG %s", msg->log.message); }
-void espnow_recv_callback_dat(struct databus_message *msg) { ESP_LOGI(TAG, "DAT %s", msg->data.message); }
+void
+espnow_recv_callback_log(struct databus_message *msg) {
+    ESP_LOGI(TAG, "LOG %s", msg->log.message);
+}
+void
+espnow_recv_callback_dat(struct databus_message *msg) {
+    ESP_LOGI(TAG, "DAT %s", msg->data.message);
+}
 
-void app_main(void) {
+void
+app_main(void) {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());

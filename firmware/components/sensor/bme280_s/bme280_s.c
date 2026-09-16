@@ -25,7 +25,8 @@ Sensor bme280_s = {
     .read = bme280_read,
 };
 
-esp_err_t bme280_init(void) {
+esp_err_t
+bme280_init(void) {
     i2c_config_t config = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = SDA_PIN,
@@ -56,7 +57,8 @@ esp_err_t bme280_init(void) {
     return ESP_OK;
 }
 
-char *bme280_read(void) {
+char *
+bme280_read(void) {
     float temperature = 0.0F;
     float pressure = 0.0F;
     float humidity = 0.0F;

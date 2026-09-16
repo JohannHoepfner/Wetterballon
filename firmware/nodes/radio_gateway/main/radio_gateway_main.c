@@ -49,7 +49,8 @@ static char s_telemetry_body[TELEMETRY_BODY_SIZE];
 static char s_explanation_body[TELEMETRY_BODY_SIZE];
 static char s_greet_emil_body[TELEMETRY_BODY_SIZE];
 
-static void format_telemetry_body(const TelemetryContext *context, char *buffer, size_t buffer_size) {
+static void
+format_telemetry_body(const TelemetryContext *context, char *buffer, size_t buffer_size) {
     int hour = context->hour;
     int minute = context->minute;
     float second = context->second;
@@ -67,7 +68,8 @@ static void format_telemetry_body(const TelemetryContext *context, char *buffer,
              fabs(context->temperature));
 }
 
-static void on_gps_data(const char *gps_data) {
+static void
+on_gps_data(const char *gps_data) {
     if (gps_data == NULL || s_telemetry_context == NULL || strstr(gps_data, "invalid") != NULL) {
         status_indicator->set_status(status_indicator, STATUS_INDICATOR_WARNING);
 
@@ -130,7 +132,8 @@ static void on_gps_data(const char *gps_data) {
     return;
 }
 
-static void on_databus_data(struct databus_message *message) {
+static void
+on_databus_data(struct databus_message *message) {
     if (message == NULL) {
         ESP_LOGE(TAG, "Invalid databus message");
         return;
@@ -181,14 +184,16 @@ static IntercomTaskContext intercom_context_explanation;
 static IntercomTaskContext intercom_context_greet_emil;
 static SemaphoreHandle_t s_intercom_send_mutex;
 
-static void on_databus_kill_radio(struct databus_message *message) {
+static void
+on_databus_kill_radio(struct databus_message *message) {
     ESP_LOGE(TAG, "radio star was murdered.");
     intercom_context_telemetry.intercom = NULL;
     intercom_context_explanation.intercom = NULL;
     intercom_context_greet_emil.intercom = NULL;
 }
 
-void app_main(void) {
+void
+app_main(void) {
     // Initialize NVS
     esp_err_t nvs_err = nvs_flash_init();
     if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES || nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

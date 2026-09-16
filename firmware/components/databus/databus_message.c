@@ -7,7 +7,8 @@
 #include <sys/select.h>
 #include <sys/time.h>
 
-const char *databus_get_node_name(NODE_ID node_id) {
+const char *
+databus_get_node_name(NODE_ID node_id) {
     switch (node_id) {
     case NODE_ID_CELL_GATEWAY:
         return "cell_gateway";
@@ -26,7 +27,8 @@ const char *databus_get_node_name(NODE_ID node_id) {
     }
 }
 
-int databus_message_to_send(struct databus_message *in_message, struct databus_message *out_message) {
+int
+databus_message_to_send(struct databus_message *in_message, struct databus_message *out_message) {
     out_message->send_time = htobe64(in_message->send_time);
     out_message->type = in_message->type;
     out_message->node_id = in_message->node_id;
@@ -49,7 +51,8 @@ int databus_message_to_send(struct databus_message *in_message, struct databus_m
     return 0;
 }
 
-int databus_message_from_recv(struct databus_message *in_message, struct databus_message *out_message) {
+int
+databus_message_from_recv(struct databus_message *in_message, struct databus_message *out_message) {
     out_message->send_time = be64toh(in_message->send_time);
     out_message->type = in_message->type;
     out_message->node_id = in_message->node_id;

@@ -12,7 +12,8 @@
 
 static const char *TAG = "store/sd_card";
 
-static esp_err_t sd_card_init(struct store *base) {
+static esp_err_t
+sd_card_init(struct store *base) {
     struct store_sd_card *self = __containerof(base, struct store_sd_card, base);
 
     esp_err_t init_err;
@@ -67,7 +68,8 @@ static esp_err_t sd_card_init(struct store *base) {
     return ESP_OK;
 }
 
-static esp_err_t sd_card_deinit(struct store *base) {
+static esp_err_t
+sd_card_deinit(struct store *base) {
     struct store_sd_card *self = __containerof(base, struct store_sd_card, base);
 
     sdmmc_card_t *card = self->card;
@@ -85,13 +87,15 @@ static esp_err_t sd_card_deinit(struct store *base) {
     return ESP_OK;
 }
 
-static esp_err_t sd_card_reinit(struct store *base) {
+static esp_err_t
+sd_card_reinit(struct store *base) {
     sd_card_deinit(base);
     return sd_card_init(base);
 }
 
 const char *data_file_path = CONFIG_SD_CARD_MOUNT_POINT "/data";
-static esp_err_t sd_card_write_data(struct store *, time_t time, const char *msg_str) {
+static esp_err_t
+sd_card_write_data(struct store *, time_t time, const char *msg_str) {
     FILE *data_file = fopen(data_file_path, "a");
     if (data_file == NULL) {
         ESP_LOGE(TAG, "Failed to open file for writing");
@@ -114,8 +118,8 @@ static esp_err_t sd_card_write_data(struct store *, time_t time, const char *msg
     return ESP_OK;
 }
 
-static esp_err_t sd_card_read_lines(struct store *, size_t max_lines, char *buffer, size_t buffer_size,
-                                    size_t *lines_read) {
+static esp_err_t
+sd_card_read_lines(struct store *, size_t max_lines, char *buffer, size_t buffer_size, size_t *lines_read) {
     size_t previous_lines_read = *lines_read;
     FILE *data_file = fopen(data_file_path, "r");
     if (data_file == NULL) {
@@ -157,7 +161,8 @@ static esp_err_t sd_card_read_lines(struct store *, size_t max_lines, char *buff
     return ESP_OK;
 }
 
-void sd_card_store_create(struct store_sd_card *out, const struct store_sd_card_cfg *config) {
+void
+sd_card_store_create(struct store_sd_card *out, const struct store_sd_card_cfg *config) {
     *out = (struct store_sd_card){
         .base =
             {

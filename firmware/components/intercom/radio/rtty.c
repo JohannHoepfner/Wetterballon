@@ -55,7 +55,8 @@ static const char OTHERSHIT_LUT[] = {
     ['&'] = 0x1A, ['.'] = 0x1C,  ['/'] = 0x1D,  ['='] = 0x1E, ['\a'] = 0x0B,
 };
 
-char rtty_encode_needs_switching(char input, bool isFigure) {
+char
+rtty_encode_needs_switching(char input, bool isFigure) {
     input = toupper(input);
 
     if (input >= 'A' && input <= 'Z') {
@@ -93,7 +94,8 @@ char rtty_encode_needs_switching(char input, bool isFigure) {
     }
 }
 
-char rtty_encode_letter(char input) {
+char
+rtty_encode_letter(char input) {
     if (input >= 'a' && input <= 'z') {
         input -= ('a' - 'A');
     }
@@ -109,7 +111,8 @@ char rtty_encode_letter(char input) {
     return OTHERSHIT_LUT[(unsigned long)input];
 }
 
-uint16_t rtty_crc(char *input, size_t len) {
+uint16_t
+rtty_crc(char *input, size_t len) {
     size_t buf_size = (5 * len) / 8 + 1;
     uint8_t buffer[buf_size];
     memset(buffer, 0, buf_size);
@@ -136,7 +139,8 @@ uint16_t rtty_crc(char *input, size_t len) {
     return crc;
 }
 
-void rtty_encode_crc(uint16_t input, char *buffer) {
+void
+rtty_encode_crc(uint16_t input, char *buffer) {
     for (char i = 0; i < RTTY_ENCODE_CRC_LEN; i++) {
         uint8_t current = (input >> 12) & 0xF;
         char currentResult = ((current << 1) & 0b11100) | (current & 1) | (((current >> 2) & 2) ^ ((current >> 1) & 2));
@@ -149,7 +153,8 @@ void rtty_encode_crc(uint16_t input, char *buffer) {
 #define TOPBIT (1 << (WIDTH - 1))
 #define POLY (0x1021)
 
-static uint16_t calc_crc(uint8_t const message[], int nBytes) {
+static uint16_t
+calc_crc(uint8_t const message[], int nBytes) {
     uint16_t remainder = 0;
 
     for (int byte = 0; byte < nBytes; ++byte) {

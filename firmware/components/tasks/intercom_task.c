@@ -10,7 +10,8 @@
 
 static const char *TAG = "task/intercom_task";
 
-static void set_status(void *context, const char *value) {
+static void
+set_status(void *context, const char *value) {
     IntercomTaskStatus *status = (IntercomTaskStatus *)context;
 
     if (status == NULL || status->mutex == NULL || status->value == NULL || status->value_size == 0 || value == NULL) {
@@ -21,14 +22,16 @@ static void set_status(void *context, const char *value) {
     xSemaphoreGive(status->mutex);
 }
 
-IntercomStatusHandler INTERCOM_TASK_MODE_TELEMETRY_handler(IntercomTaskContext *context) {
+IntercomStatusHandler
+INTERCOM_TASK_MODE_TELEMETRY_handler(IntercomTaskContext *context) {
     return (IntercomStatusHandler){
         .set = set_status,
         .context = context == NULL ? NULL : context->source.status,
     };
 }
 
-void intercom_task(void *arg) {
+void
+intercom_task(void *arg) {
     const IntercomTaskContext *context = (const IntercomTaskContext *)arg;
 
     if (context == NULL || context->intercom == NULL || context->body == NULL || context->body_size == 0 ||

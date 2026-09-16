@@ -26,8 +26,14 @@ Intercom radio = {
 
 si5351_t si5351_dev;
 
-void amp_enable() { gpio_set_level(CONFIG_RADIO_AMP_PWK, 1); }
-void amp_disable() { gpio_set_level(CONFIG_RADIO_AMP_PWK, 0); }
+void
+amp_enable() {
+    gpio_set_level(CONFIG_RADIO_AMP_PWK, 1);
+}
+void
+amp_disable() {
+    gpio_set_level(CONFIG_RADIO_AMP_PWK, 0);
+}
 
 #define FSK_XTAL_HZ 25000000LL /* must match the value passed to si5351_init() */
 #define FSK_CORR_PPB 0         /* your measured calibration, parts per billion */
@@ -42,7 +48,8 @@ static pll_regs_t reg_mark, reg_space;
 static i2c_master_dev_handle_t fsk_dev;
 static uint8_t oeb_shadow; /* cached register 3 */
 
-static void pll_regs_for(uint64_t fvco, pll_regs_t *out) {
+static void
+pll_regs_for(uint64_t fvco, pll_regs_t *out) {
     const int64_t fx = FSK_XTAL_HZ + (FSK_XTAL_HZ * FSK_CORR_PPB) / 1000000000LL;
 
     uint32_t a = (uint32_t)(fvco / (uint64_t)fx);
@@ -65,7 +72,8 @@ static void pll_regs_for(uint64_t fvco, pll_regs_t *out) {
     out->r[7] = p2 & 0xFF;
 }
 
-static esp_err_t fsk_setup(void) {
+static esp_err_t
+fsk_setup(void) {
     const uint64_t f_space = CONFIG_RADIO_FREQ_BASE;
     const uint64_t f_mark = CONFIG_RADIO_FREQ_BASE + CONFIG_RADIO_FREQ_SHIFT;
 
@@ -92,7 +100,8 @@ static esp_err_t fsk_setup(void) {
     return ESP_OK;
 }
 
-static esp_err_t fsk_open(void) {
+static esp_err_t
+fsk_open(void) {
     esp_err_t e =
         i2c_master_bus_add_device(si5351_dev.i2c_dev.i2c_bus_handle, &si5351_dev.i2c_dev.i2c_dev_conf, &fsk_dev);
     if (e != ESP_OK)
@@ -101,19 +110,22 @@ static esp_err_t fsk_open(void) {
     return i2c_master_transmit_receive(fsk_dev, &addr, 1, &oeb_shadow, 1, SI5351_I2C_TIMEOUT_MS);
 }
 
-static void fsk_close(void) {
+static void
+fsk_close(void) {
     i2c_master_bus_rm_device(fsk_dev);
     fsk_dev = NULL;
 }
 
-static inline esp_err_t fsk_tone(bool mark) {
+static inline esp_err_t
+fsk_tone(bool mark) {
     uint8_t buf[9];
     buf[0] = SI5351_PLLA_REGS;
     memcpy(&buf[1], mark ? reg_mark.r : reg_space.r, 8);
     return i2c_master_transmit(fsk_dev, buf, sizeof(buf), SI5351_I2C_TIMEOUT_MS);
 }
 
-static esp_err_t fsk_output(bool on) {
+static esp_err_t
+fsk_output(bool on) {
     uint8_t v = on ? (uint8_t)(oeb_shadow & ~1u) : (uint8_t)(oeb_shadow | 1u);
     uint8_t buf[2] = {3, v};
     esp_err_t e = i2c_master_transmit(fsk_dev, buf, 2, SI5351_I2C_TIMEOUT_MS);
@@ -122,7 +134,8 @@ static esp_err_t fsk_output(bool on) {
     return e;
 }
 
-esp_err_t radio_init(void) {
+esp_err_t
+radio_init(void) {
     gpio_set_direction(CONFIG_RADIO_AMP_PWK, GPIO_MODE_OUTPUT);
     amp_disable();
 
@@ -151,11 +164,15 @@ esp_err_t radio_init(void) {
     return ESP_OK;
 }
 
-esp_err_t radio_deinit(void) { return ESP_OK; }
+esp_err_t
+radio_deinit(void) {
+    return ESP_OK;
+}
 
 static int64_t next_bit_us;
 
-static void wait_until(int64_t deadline) {
+static void
+wait_until(int64_t deadline) {
     while (deadline - esp_timer_get_time() > 2 * portTICK_PERIOD_MS * 1000) {
         vTaskDelay(1);
     }
@@ -165,7 +182,8 @@ static void wait_until(int64_t deadline) {
 
 static int last_tone = -1;
 
-static esp_err_t _radio_send_bit(bool bit) {
+static esp_err_t
+_radio_send_bit(bool bit) {
     wait_until(next_bit_us);
     if (last_tone != (int)bit) {
         fsk_tone(bit);
@@ -182,7 +200,8 @@ static esp_err_t _radio_send_bit(bool bit) {
  * same order the old hard-coded rtty_symbol_table used:
  *   'A' -> {1,1,0,0,0} == 0x03 == ALPHABET_LUT['A' - 'A'].
  */
-static esp_err_t _radio_send_symbol(uint8_t symbol) {
+static esp_err_t
+_radio_send_symbol(uint8_t symbol) {
     _radio_send_bit(false);
     for (uint8_t i = 0; i < 5; ++i) {
         _radio_send_bit((symbol >> i) & 1u);
@@ -193,7 +212,8 @@ static esp_err_t _radio_send_symbol(uint8_t symbol) {
     return ESP_OK;
 }
 
-esp_err_t radio_send_frame(const radio_frame *frame) {
+esp_err_t
+radio_send_frame(const radio_frame *frame) {
     if (frame == NULL || frame->content == NULL)
         return ESP_ERR_INVALID_ARG;
 
@@ -223,7 +243,8 @@ esp_err_t radio_send_frame(const radio_frame *frame) {
     return ESP_OK;
 }
 
-esp_err_t radio_send_msg(char *buf, size_t buflen) {
+esp_err_t
+radio_send_msg(char *buf, size_t buflen) {
     ESP_LOGI(TAG, "sending %u chars '%s'", (unsigned)buflen, buf);
     radio_frame frame = radio_encode_frame(buf, buflen, true);
     if (frame.content == NULL) {

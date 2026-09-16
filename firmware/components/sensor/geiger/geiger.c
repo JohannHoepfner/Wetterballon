@@ -15,14 +15,18 @@ static const char *TAG = "sensor/geiger";
 static volatile uint64_t pulse_count = 0;
 static char formatted_pulse_count[32];
 
-static void IRAM_ATTR gpio_isr_handler(void *arg) { pulse_count++; }
+static void IRAM_ATTR
+gpio_isr_handler(void *arg) {
+    pulse_count++;
+}
 
 Sensor geiger = {
     .init = geiger_init,
     .read = geiger_read,
 };
 
-esp_err_t geiger_init(void) {
+esp_err_t
+geiger_init(void) {
     esp_err_t err;
 
     gpio_config_t io_conf = {
@@ -52,13 +56,15 @@ esp_err_t geiger_init(void) {
     return ESP_OK;
 }
 
-char *geiger_read(void) {
+char *
+geiger_read(void) {
     ESP_LOGI(TAG, "Geiger sensor read: pulse_count=%llu", (unsigned long long)pulse_count);
 
     return geiger_format((unsigned long long)pulse_count);
 }
 
-char *geiger_format(unsigned long long value) {
+char *
+geiger_format(unsigned long long value) {
     snprintf(formatted_pulse_count, sizeof(formatted_pulse_count), "s=%llu", (unsigned long long)value);
     return formatted_pulse_count;
 }

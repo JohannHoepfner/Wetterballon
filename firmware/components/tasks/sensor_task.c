@@ -13,7 +13,8 @@
 static const char *TAG = "tasks/sensor_task";
 
 // TODO: esp_err_t instead of void
-void sensor_task(void *arg) {
+void
+sensor_task(void *arg) {
     const SensorTaskContext *context = (SensorTaskContext *)arg;
 
     if (context == NULL || context->schedule == NULL) {
@@ -120,8 +121,9 @@ void sensor_task(void *arg) {
     }
 }
 
-esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
-                             struct store *store, StatusIndicator *status_indicator) {
+esp_err_t
+start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count, struct store *store,
+                   StatusIndicator *status_indicator) {
     SemaphoreHandle_t sensor_output_mutex = xSemaphoreCreateMutex();
     if (sensor_output_mutex == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor output mutex");

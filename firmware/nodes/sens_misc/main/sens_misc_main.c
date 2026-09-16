@@ -25,7 +25,8 @@ static struct store *store;
 StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_pt1000 = &pt1000;
 
-static void on_databus_data(struct databus_message *message) {
+static void
+on_databus_data(struct databus_message *message) {
     if (message == NULL) {
         ESP_LOGE(TAG, "Invalid databus message");
         return;
@@ -45,7 +46,8 @@ static void on_databus_data(struct databus_message *message) {
     }
 }
 
-void app_main(void) {
+void
+app_main(void) {
     // Initialize NVS
     esp_err_t nvs_err = nvs_flash_init();
     if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES || nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

@@ -14,13 +14,15 @@ Sensor mock = {
     .read = mock_read,
 };
 
-esp_err_t mock_init(void) {
+esp_err_t
+mock_init(void) {
     ESP_LOGI(TAG, "Mock sensor initialized");
 
     return ESP_OK;
 }
 
-char *mock_read(void) {
+char *
+mock_read(void) {
     double value = ((double)esp_random() / UINT32_MAX) * 100.0;
 
     ESP_LOGI(TAG, "Mock sensor read value: %.2f", value);
@@ -29,7 +31,8 @@ char *mock_read(void) {
     return mock_formatted;
 }
 
-char *mock_format(double value) {
+char *
+mock_format(double value) {
     static char formatted[32];
 
     snprintf(formatted, sizeof(formatted), "m=%.2f", value);

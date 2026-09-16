@@ -17,7 +17,8 @@ Sensor pt1000 = {
     .read = pt1000_read,
 };
 
-esp_err_t init_ads(void) {
+esp_err_t
+init_ads(void) {
     i2c_master_bus_config_t config = {
         .sda_io_num = CONFIG_PT1000_I2C_SDA_PIN,
         .scl_io_num = CONFIG_PT1000_I2C_SCL_PIN,
@@ -47,14 +48,16 @@ esp_err_t init_ads(void) {
     return ESP_OK;
 }
 
-double get_voltage(ads1115_t *ads, ads1115_mux_t mux, ads1115_fsr_t fsr) {
+double
+get_voltage(ads1115_t *ads, ads1115_mux_t mux, ads1115_fsr_t fsr) {
     ads1115_set_mux(ads, mux);
     ads1115_set_pga(ads, fsr);
     double volt = ads1115_get_voltage(ads);
     return volt;
 }
 
-esp_err_t pt1000_init(void) {
+esp_err_t
+pt1000_init(void) {
     esp_err_t err = init_ads();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize PT1000 sensor: %s (0x%x)", esp_err_to_name(err), err);
@@ -65,7 +68,8 @@ esp_err_t pt1000_init(void) {
     return ESP_OK;
 }
 
-char *pt1000_read(void) {
+char *
+pt1000_read(void) {
     double differential_voltage = get_voltage(&ads, ADS1115_MUX_0_1, ADS1115_FSR_6_144);
     double a3_voltage = get_voltage(&ads, ADS1115_MUX_3_GND, ADS1115_FSR_6_144);
 
@@ -74,7 +78,8 @@ char *pt1000_read(void) {
     return pt1000_format(differential_voltage, a3_voltage);
 }
 
-double volt_to_temp(double volt) {
+double
+volt_to_temp(double volt) {
     // Formel mittels Regression aus den Messwerten
     double a = 12.8283;
     double b = 64.8344;
@@ -85,7 +90,8 @@ double volt_to_temp(double volt) {
     return a * volt * volt + b * volt + c - offset;
 }
 
-char *pt1000_format(double differential_voltage, double a3_voltage) {
+char *
+pt1000_format(double differential_voltage, double a3_voltage) {
     snprintf(formatted_voltage, sizeof(formatted_voltage), "a0-a1=%.4f,a3=%.4f,t1=%.4f", differential_voltage,
              a3_voltage, volt_to_temp(a3_voltage));
     return formatted_voltage;

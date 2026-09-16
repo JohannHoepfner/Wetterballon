@@ -40,7 +40,8 @@ static uint8_t broadcast_mac[ESP_NOW_ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
 DATABUS_MSG_TYPES
 #undef DATABUS_MSG_TYPE
 
-void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
+void
+_databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
     uint8_t *mac_addr = recv_info->src_addr;
     uint8_t *des_addr = recv_info->des_addr;
 
@@ -86,9 +87,13 @@ void _databus_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const uint8_t
     }
 }
 
-esp_err_t databus_reinit(void) { return databus_init(node_id); }
+esp_err_t
+databus_reinit(void) {
+    return databus_init(node_id);
+}
 
-esp_err_t databus_init(uint8_t id) {
+esp_err_t
+databus_init(uint8_t id) {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
@@ -111,7 +116,8 @@ esp_err_t databus_init(uint8_t id) {
     return ESP_OK;
 }
 
-esp_err_t databus_send(struct databus_message *msg) {
+esp_err_t
+databus_send(struct databus_message *msg) {
     char msg_buf[sizeof(CONFIG_DATABUS_MESSAGE_PREFIX) + sizeof(struct databus_message)];
     databus_message_to_send(msg, (struct databus_message *)(msg_buf + sizeof(CONFIG_DATABUS_MESSAGE_PREFIX)));
     memcpy(msg_buf, CONFIG_DATABUS_MESSAGE_PREFIX, sizeof(CONFIG_DATABUS_MESSAGE_PREFIX));
@@ -119,7 +125,8 @@ esp_err_t databus_send(struct databus_message *msg) {
     return esp_now_send(broadcast_mac, (const uint8_t *)msg_buf, sizeof(msg_buf));
 }
 
-esp_err_t databus_send_data(time_t time, char *msg_str) {
+esp_err_t
+databus_send_data(time_t time, char *msg_str) {
     struct databus_message msg = {
         .send_time = time, .type = DATABUS_MSG_TYPE_DATA, .node_id = node_id, .msg_id = mesage_id_counter++};
     strncpy((char *)msg.DATA_content.message, msg_str, sizeof(msg.DATA_content.message));
@@ -127,7 +134,8 @@ esp_err_t databus_send_data(time_t time, char *msg_str) {
     return databus_send(&msg);
 }
 
-esp_err_t databus_send_log(time_t send_time, char *msg_str) {
+esp_err_t
+databus_send_log(time_t send_time, char *msg_str) {
     struct databus_message msg = {
         .send_time = send_time, .type = DATABUS_MSG_TYPE_LOG, .node_id = node_id, .msg_id = mesage_id_counter++};
     strncpy((char *)msg.DATA_content.message, msg_str, sizeof(msg.DATA_content.message));
@@ -135,7 +143,8 @@ esp_err_t databus_send_log(time_t send_time, char *msg_str) {
     return databus_send(&msg);
 }
 
-esp_err_t databus_send_timesync(time_t time) {
+esp_err_t
+databus_send_timesync(time_t time) {
     struct databus_message msg = {
         .send_time = time, .type = DATABUS_MSG_TYPE_TIMESYNC, .node_id = node_id, .msg_id = mesage_id_counter++};
     msg.TIMESYNC_content.time = time;
@@ -145,7 +154,8 @@ esp_err_t databus_send_timesync(time_t time) {
     return databus_send(&msg);
 }
 
-esp_err_t databus_on_receive(uint64_t message_type, DatabusReceiveHandler handler) {
+esp_err_t
+databus_on_receive(uint64_t message_type, DatabusReceiveHandler handler) {
     if (handler == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -167,12 +177,14 @@ esp_err_t databus_on_receive(uint64_t message_type, DatabusReceiveHandler handle
     return ESP_OK;
 }
 
-int set_time(time_t time) {
+int
+set_time(time_t time) {
     struct timeval tv = {.tv_sec = time, .tv_usec = 0};
     return settimeofday(&tv, NULL);
 }
 
-void on_databus_timesync_default(struct databus_message *message) {
+void
+on_databus_timesync_default(struct databus_message *message) {
     if (message == NULL || message->type != DATABUS_MSG_TYPE_TIMESYNC) {
         ESP_LOGE(TAG, "Invalid databus timesync message");
         return;
@@ -186,7 +198,8 @@ void on_databus_timesync_default(struct databus_message *message) {
     }
 }
 
-void on_databus_log_default(struct databus_message *message) {
+void
+on_databus_log_default(struct databus_message *message) {
     if (message == NULL || message->type != DATABUS_MSG_TYPE_LOG) {
         ESP_LOGE(TAG, "Invalid databus log message");
         return;

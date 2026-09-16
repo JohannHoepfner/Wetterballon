@@ -10,7 +10,8 @@
 
 static const char *TAG = "I2C Scanner";
 
-void i2c_master_init() {
+void
+i2c_master_init() {
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = I2C_MASTER_SDA_IO,
@@ -24,7 +25,8 @@ void i2c_master_init() {
     i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 }
 
-void i2c_scanner() {
+void
+i2c_scanner() {
     int devices_found = 0;
     for (int address = 1; address < 127; address++) {
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -49,7 +51,8 @@ void i2c_scanner() {
     }
 }
 
-void app_main() {
+void
+app_main() {
     i2c_master_init();
 
     while (1) {
