@@ -60,7 +60,7 @@ char *bme280_read(void) {
     float temperature = 0.0F;
     float pressure = 0.0F;
     float humidity = 0.0F;
-    
+
     if (bme280_read_temperature(sensor, &temperature) != ESP_OK || bme280_read_pressure(sensor, &pressure) != ESP_OK ||
         bme280_read_humidity(sensor, &humidity) != ESP_OK) {
         return NULL;

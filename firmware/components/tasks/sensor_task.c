@@ -25,14 +25,16 @@ void sensor_task(void *arg) {
     if (context->schedule->sensor == NULL) {
         ESP_LOGE(TAG, "Sensor '%s': No adapter defined, stopping sensor task", context->schedule->name);
         if (context->schedule->status_indicator != NULL) {
-            context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
+            context->schedule->status_indicator->set_status(context->schedule->status_indicator,
+                                                            STATUS_INDICATOR_SENSOR_ERROR);
         }
         vTaskDelete(NULL);
         return;
     }
 
     if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-        context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_INITIALIZING);
+        context->schedule->status_indicator->set_status(context->schedule->status_indicator,
+                                                        STATUS_INDICATOR_INITIALIZING);
     }
 
     // Initialize the sensor
@@ -42,7 +44,8 @@ void sensor_task(void *arg) {
         ESP_LOGE(TAG, "Sensor '%s': Failed to initialize sensor: %s (0x%x)", context->schedule->name,
                  esp_err_to_name(err), err);
         if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-            context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
+            context->schedule->status_indicator->set_status(context->schedule->status_indicator,
+                                                            STATUS_INDICATOR_SENSOR_ERROR);
         }
         vTaskDelete(NULL);
         return;
@@ -59,8 +62,10 @@ void sensor_task(void *arg) {
         char *sensor_value = context->schedule->sensor->read();
         if (sensor_value == NULL) {
             ESP_LOGE(TAG, "Sensor '%s': Failed to read sensor data", context->schedule->name);
-            if (context->schedule->status_indicator != NULL && context->schedule->status_indicator->set_status != NULL) {
-                context->schedule->status_indicator->set_status(context->schedule->status_indicator, STATUS_INDICATOR_ERROR);
+            if (context->schedule->status_indicator != NULL &&
+                context->schedule->status_indicator->set_status != NULL) {
+                context->schedule->status_indicator->set_status(context->schedule->status_indicator,
+                                                                STATUS_INDICATOR_ERROR);
             }
             vTaskDelay(context->schedule->read_interval);
             continue;

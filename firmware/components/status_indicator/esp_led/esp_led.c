@@ -65,7 +65,7 @@ esp_err_t esp_led_set(StatusIndicator *self, Status status) {
 
     // Make certain statuses persistent
     if (((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SENSOR_ERROR ||
-        ((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SD_CARD_ERROR || 
+        ((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_SD_CARD_ERROR ||
         ((EspLedContext *)self->ctx)->status == STATUS_INDICATOR_INTERCOM_ERROR) {
         xSemaphoreGive(esp_led_mutex);
         return ESP_OK;
