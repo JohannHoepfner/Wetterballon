@@ -16,7 +16,7 @@ mock_store_init(struct store *) {
 }
 
 static esp_err_t
-mock_store_deinit(void) {
+mock_store_deinit(struct store *) {
     ESP_LOGI(TAG, "Mock store adapter deinitialized");
 
     return ESP_OK;
