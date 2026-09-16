@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-firmware:
+    name: Build Firmware (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.5
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - nodes/cell_gateway
+          - nodes/radio_gateway
+          - nodes/sens_env
+          - nodes/sens_misc
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.app }}
+        working-directory: firmware/${{ matrix.app }}
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py build
