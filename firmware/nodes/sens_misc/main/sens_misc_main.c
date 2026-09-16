@@ -23,7 +23,6 @@ static struct store_sd_card store_sd_card;
 static struct store *store;
 
 struct status_indicator *const status_indicator = &esp_led;
-struct sensor *const sensor_pt1000 = &pt1000;
 
 static void
 on_databus_data(struct databus_message *message) {
@@ -47,7 +46,7 @@ on_databus_data(struct databus_message *message) {
 }
 
 static struct sensor_schedule schedules[] = {
-    {"pt1000", sensor_pt1000, status_indicator, pdMS_TO_TICKS(1000)},
+    {"pt1000", &pt1000, status_indicator, pdMS_TO_TICKS(1000)},
 };
 
 void

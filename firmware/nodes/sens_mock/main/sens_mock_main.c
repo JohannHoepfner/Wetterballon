@@ -19,7 +19,6 @@ static const char *TAG = "node/sens_mock";
 
 struct store *store = &mock_store;
 struct status_indicator *const status_indicator = &esp_led;
-struct sensor *const sensor_mock = &mock;
 
 static void
 on_databus_data(struct databus_message *message) {
@@ -46,7 +45,7 @@ on_databus_data(struct databus_message *message) {
 }
 
 static struct sensor_schedule schedules[] = {
-    {"mock", sensor_mock, status_indicator, pdMS_TO_TICKS(1000)},
+    {"mock", &mock, status_indicator, pdMS_TO_TICKS(1000)},
 };
 
 void

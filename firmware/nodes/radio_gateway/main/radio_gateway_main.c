@@ -26,7 +26,6 @@ static const char *TAG = "node/radio_gateway";
 struct intercom *intercom = &radio;
 static struct store *store = &mock_store;
 struct status_indicator *const status_indicator = &esp_led;
-struct sensor *const sensor_gps = &neo_m8;
 
 #define TELEMETRY_BODY_SIZE 256
 typedef struct {
@@ -193,7 +192,7 @@ on_databus_kill_radio(struct databus_message *message) {
 }
 
 static struct sensor_schedule schedules[] = {
-    {"gps", sensor_gps, status_indicator, pdMS_TO_TICKS(3000)},
+    {"gps", &neo_m8, status_indicator, pdMS_TO_TICKS(3000)},
 };
 
 void
@@ -246,7 +245,7 @@ app_main(void) {
     xSemaphoreGive(s_telemetry_status.mutex);
 
     // Hook up databus receive callback to update telemetry status
-    ESP_ERROR_CHECK(sensor_gps->on_receive(on_gps_data));
+    ESP_ERROR_CHECK(neo_m8.on_receive(on_gps_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_KILL_RADIO, on_databus_kill_radio));
 

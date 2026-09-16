@@ -24,8 +24,6 @@ static struct store_sd_card store_sd_card;
 static struct store *store;
 
 struct status_indicator *const status_indicator = &esp_led;
-struct sensor *const sensor_geiger = &geiger;
-struct sensor *const sensor_bme280 = &bme280_s;
 
 static void
 on_databus_data(struct databus_message *message) {
@@ -49,8 +47,8 @@ on_databus_data(struct databus_message *message) {
 }
 
 static struct sensor_schedule schedules[] = {
-    {"geiger", sensor_geiger, status_indicator, pdMS_TO_TICKS(500) },
-    {"bme280", sensor_bme280, status_indicator, pdMS_TO_TICKS(1000)},
+    {"geiger", &geiger,   status_indicator, pdMS_TO_TICKS(500) },
+    {"bme280", &bme280_s, status_indicator, pdMS_TO_TICKS(1000)},
 };
 
 void
