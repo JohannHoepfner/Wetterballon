@@ -21,14 +21,14 @@ EspLedContext esp_led_context;
 led_strip_handle_t led_strip;
 static SemaphoreHandle_t esp_led_mutex;
 
-StatusIndicator esp_led = {
+struct status_indicator esp_led = {
     .ctx = &esp_led_context,
     .init = esp_led_init,
     .set_status = esp_led_set,
 };
 
 esp_err_t
-esp_led_init(StatusIndicator *self) {
+esp_led_init(struct status_indicator *self) {
     esp_led_mutex = xSemaphoreCreateMutex();
     if (esp_led_mutex == NULL) {
         return ESP_ERR_NO_MEM;
@@ -60,7 +60,7 @@ esp_led_init(StatusIndicator *self) {
 }
 
 esp_err_t
-esp_led_set(StatusIndicator *self, Status status) {
+esp_led_set(struct status_indicator *self, Status status) {
     if (esp_led_mutex == NULL || xSemaphoreTake(esp_led_mutex, portMAX_DELAY) != pdTRUE) {
         return ESP_ERR_INVALID_STATE;
     }

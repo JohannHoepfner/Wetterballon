@@ -26,14 +26,6 @@ mock_read(void) {
     return mock_formatted;
 }
 
-static char *
-mock_format(double value) {
-    static char formatted[32];
-
-    snprintf(formatted, sizeof(formatted), "m=%.2f", value);
-    return formatted;
-}
-
 struct sensor mock = {
     .init = mock_init,
     .read = mock_read,

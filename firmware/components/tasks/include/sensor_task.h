@@ -8,19 +8,19 @@
 
 #include <stddef.h>
 
-typedef struct {
+struct sensor_schedule {
     char *name;
     struct sensor *sensor;
-    StatusIndicator *status_indicator;
+    struct status_indicator *status_indicator;
     TickType_t read_interval;
-} SensorSchedule;
+};
 
 typedef struct {
-    const SensorSchedule *schedule;
+    const struct sensor_schedule *schedule;
     struct store *store;
     SemaphoreHandle_t sensor_output_mutex;
 } SensorTaskContext;
 
 void sensor_task(void *arg);
-esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
-                             struct store *store, StatusIndicator *status_indicator);
+esp_err_t start_sensor_tasks(struct sensor_schedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
+                             struct store *store, struct status_indicator *status_indicator);

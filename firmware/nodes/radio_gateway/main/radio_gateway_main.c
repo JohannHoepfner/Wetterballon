@@ -25,8 +25,8 @@ static const char *TAG = "node/radio_gateway";
 
 struct intercom *intercom = &radio;
 static struct store *store = &mock_store;
-StatusIndicator *status_indicator = &esp_led;
-struct sensor *sensor_gps = &neo_m8;
+struct status_indicator *const status_indicator = &esp_led;
+struct sensor *const sensor_gps = &neo_m8;
 
 #define TELEMETRY_BODY_SIZE 256
 typedef struct {
@@ -192,6 +192,10 @@ on_databus_kill_radio(struct databus_message *message) {
     intercom_context_greet_emil.intercom = NULL;
 }
 
+static struct sensor_schedule schedules[] = {
+    {"gps", sensor_gps, status_indicator, pdMS_TO_TICKS(3000)},
+};
+
 void
 app_main(void) {
     // Initialize NVS
@@ -300,12 +304,6 @@ app_main(void) {
         return;
     }
 
-    // Initialize sensor tasks
-    static SensorSchedule schedules[] = {
-        {"gps", NULL, NULL, pdMS_TO_TICKS(3000)},
-    };
-    schedules[0].status_indicator = status_indicator;
-    schedules[0].sensor = sensor_gps;
     static SensorTaskContext sensor_task_contexts[sizeof(schedules) / sizeof(schedules[0])];
     esp_err_t err = start_sensor_tasks(schedules, sensor_task_contexts, sizeof(schedules) / sizeof(schedules[0]), store,
                                        status_indicator);

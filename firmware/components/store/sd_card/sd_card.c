@@ -166,12 +166,12 @@ sd_card_store_create(struct store_sd_card *out, const struct store_sd_card_cfg *
     *out = (struct store_sd_card){
         .base =
             {
-                .init = sd_card_init,
-                .reinit = sd_card_reinit,
-                .deinit = sd_card_deinit,
-                .save = sd_card_write_data,
-                .read_lines = sd_card_read_lines,
-            },
+                   .init = sd_card_init,
+                   .reinit = sd_card_reinit,
+                   .deinit = sd_card_deinit,
+                   .save = sd_card_write_data,
+                   .read_lines = sd_card_read_lines,
+                   },
         .cfg = *config,
     };
 }

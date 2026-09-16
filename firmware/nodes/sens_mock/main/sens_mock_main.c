@@ -17,9 +17,9 @@
 
 static const char *TAG = "node/sens_mock";
 
-Store *store = &mock_store;
-StatusIndicator *status_indicator = &esp_led;
-Sensor *sensor_mock = &mock;
+struct store *store = &mock_store;
+struct status_indicator *const status_indicator = &esp_led;
+struct sensor *const sensor_mock = &mock;
 
 static void
 on_databus_data(struct databus_message *message) {
@@ -36,7 +36,7 @@ on_databus_data(struct databus_message *message) {
     time_t send_time = message->send_time;
     char *msg_str = message->DATA_content.message;
 
-    esp_err_t err = store->save(send_time, msg_str);
+    esp_err_t err = store->save(store, send_time, msg_str);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
         if (status_indicator != NULL && status_indicator->set_status != NULL) {
@@ -44,6 +44,10 @@ on_databus_data(struct databus_message *message) {
         }
     }
 }
+
+static struct sensor_schedule schedules[] = {
+    {"mock", sensor_mock, status_indicator, pdMS_TO_TICKS(1000)},
+};
 
 void
 app_main(void) {
@@ -60,19 +64,13 @@ app_main(void) {
 
     // Initialize central adapters
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
-    ESP_ERROR_CHECK(store->init());
+    ESP_ERROR_CHECK(store->init(store));
 
     // Hook up databus receive callbacks
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_LOG, on_databus_log_default));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_TIMESYNC, on_databus_timesync_default));
 
-    // Initialize sensor tasks
-    static SensorSchedule schedules[] = {
-        {"mock", NULL, NULL, pdMS_TO_TICKS(1000)},
-    };
-    schedules[0].sensor = sensor_mock;
-    schedules[0].status_indicator = status_indicator;
     static SensorTaskContext sensor_task_contexts[sizeof(schedules) / sizeof(schedules[0])];
     esp_err_t err = start_sensor_tasks(schedules, sensor_task_contexts, sizeof(schedules) / sizeof(schedules[0]), store,
                                        status_indicator);

@@ -44,7 +44,7 @@ typedef struct {
         } source_text;
     } source;
     TickType_t send_interval;
-    StatusIndicator *status_indicator;
+    struct status_indicator *status_indicator;
 } IntercomTaskContext;
 
 IntercomStatusHandler INTERCOM_TASK_MODE_TELEMETRY_handler(IntercomTaskContext *context);

@@ -12,10 +12,8 @@ typedef enum {
     STATUS_INDICATOR_OK
 } Status;
 
-typedef struct StatusIndicator StatusIndicator;
-
-typedef struct StatusIndicator {
+struct status_indicator {
     void *ctx;
-    esp_err_t (*init)(StatusIndicator *self);
-    esp_err_t (*set_status)(StatusIndicator *self, Status status);
-} StatusIndicator;
+    esp_err_t (*init)(struct status_indicator *self);
+    esp_err_t (*set_status)(struct status_indicator *self, Status status);
+};

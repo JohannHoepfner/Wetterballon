@@ -122,8 +122,8 @@ sensor_task(void *arg) {
 }
 
 esp_err_t
-start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count, struct store *store,
-                   StatusIndicator *status_indicator) {
+start_sensor_tasks(struct sensor_schedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
+                   struct store *store, struct status_indicator *status_indicator) {
     SemaphoreHandle_t sensor_output_mutex = xSemaphoreCreateMutex();
     if (sensor_output_mutex == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor output mutex");

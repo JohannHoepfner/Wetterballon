@@ -21,7 +21,7 @@ static const char *TAG = "node/cell_gateway";
 struct intercom *intercom = &sim_modem;
 static struct store_sd_card store_sd_card;
 static struct store *store;
-StatusIndicator *status_indicator = &esp_led;
+struct status_indicator *status_indicator = &esp_led;
 
 #define TELEMETRY_BODY_SIZE (64 * 1024)
 static char s_intercom_body[TELEMETRY_BODY_SIZE];

@@ -23,9 +23,9 @@ static const char *TAG = "node/sens_env";
 static struct store_sd_card store_sd_card;
 static struct store *store;
 
-StatusIndicator *status_indicator = &esp_led;
-struct sensor *sensor_geiger = &geiger;
-struct sensor *sensor_bme280 = &bme280_s;
+struct status_indicator *const status_indicator = &esp_led;
+struct sensor *const sensor_geiger = &geiger;
+struct sensor *const sensor_bme280 = &bme280_s;
 
 static void
 on_databus_data(struct databus_message *message) {
@@ -47,6 +47,11 @@ on_databus_data(struct databus_message *message) {
         ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
     }
 }
+
+static struct sensor_schedule schedules[] = {
+    {"geiger", sensor_geiger, status_indicator, pdMS_TO_TICKS(500) },
+    {"bme280", sensor_bme280, status_indicator, pdMS_TO_TICKS(1000)},
+};
 
 void
 app_main(void) {
@@ -84,15 +89,6 @@ app_main(void) {
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_TIMESYNC, on_databus_timesync_default));
 
-    // Initialize sensor tasks
-    static SensorSchedule schedules[] = {
-        {"geiger", NULL, NULL, pdMS_TO_TICKS(500)},
-        {"bme280", NULL, NULL, pdMS_TO_TICKS(1000)},
-    };
-    schedules[0].status_indicator = status_indicator;
-    schedules[0].sensor = sensor_geiger;
-    schedules[1].status_indicator = status_indicator;
-    schedules[1].sensor = sensor_bme280;
     static SensorTaskContext sensor_task_contexts[sizeof(schedules) / sizeof(schedules[0])];
     esp_err_t err = start_sensor_tasks(schedules, sensor_task_contexts, sizeof(schedules) / sizeof(schedules[0]), store,
                                        status_indicator);

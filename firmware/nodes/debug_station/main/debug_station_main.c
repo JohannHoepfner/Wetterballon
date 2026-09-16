@@ -14,7 +14,7 @@
 
 static const char *TAG = "node/debug_station";
 
-StatusIndicator *status_indicator = &esp_led;
+struct status_indicator *status_indicator = &esp_led;
 
 static void
 on_databus_data(struct databus_message *message) {
