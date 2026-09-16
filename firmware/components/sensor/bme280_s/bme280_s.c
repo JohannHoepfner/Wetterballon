@@ -20,7 +20,7 @@ static i2c_bus_handle_t i2c_bus;
 static bme280_handle_t sensor;
 static char formatted_reading[64];
 
-Sensor bme280_s = {
+struct sensor bme280_s = {
     .init = bme280_init,
     .read = bme280_read,
 };

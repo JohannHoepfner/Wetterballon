@@ -12,7 +12,7 @@ ads1115_t ads; // 0-1 PT1000 | 3 PT1000 (more accurate)
 static const char *TAG = "sensor/pt1000";
 static char formatted_voltage[48];
 
-Sensor pt1000 = {
+struct sensor pt1000 = {
     .init = pt1000_init,
     .read = pt1000_read,
 };

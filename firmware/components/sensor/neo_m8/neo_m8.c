@@ -14,18 +14,12 @@ static const char *TAG = "sensor/neo_m8";
 
 static char gps_formatted[64];
 
-Sensor neo_m8 = {
-    .init = neo_m8_init,
-    .read = neo_m8_read,
-    .on_receive = neo_m8_on_receive,
-};
-
 #define NEO_M8_MAX_CALLBACKS 32
 
 static sensor_callback_t callbacks[NEO_M8_MAX_CALLBACKS];
 static size_t callback_count;
 
-esp_err_t
+static esp_err_t
 neo_m8_on_receive(sensor_callback_t callback) {
     if (callback == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -40,7 +34,7 @@ neo_m8_on_receive(sensor_callback_t callback) {
     return ESP_OK;
 }
 
-esp_err_t
+static esp_err_t
 neo_m8_init(void) {
     esp_err_t err = gps_init();
     if (err != ESP_OK) {
@@ -52,7 +46,19 @@ neo_m8_init(void) {
     return ESP_OK;
 }
 
-char *
+static char *
+gps_format(double latitude, double longitude, double altitude, int hour, int minute, float second, bool valid) {
+    if (valid) {
+        snprintf(gps_formatted, sizeof(gps_formatted), "lat=%.6f,lon=%.6f,alt=%.2f,utc=%02d:%02d:%04.1f", latitude,
+                 longitude, altitude, hour, minute, second);
+    } else {
+        snprintf(gps_formatted, sizeof(gps_formatted), "lat=%.6f,lon=%.6f,alt=%.0f,utc=%02d:%02d:%04.1f (invalid)",
+                 latitude, longitude, altitude, hour, minute, second);
+    }
+    return gps_formatted;
+}
+
+static char *
 neo_m8_read(void) {
     double latitude;
     double longitude;
@@ -75,14 +81,8 @@ neo_m8_read(void) {
     return formatted_gps;
 }
 
-char *
-gps_format(double latitude, double longitude, double altitude, int hour, int minute, float second, bool valid) {
-    if (valid) {
-        snprintf(gps_formatted, sizeof(gps_formatted), "lat=%.6f,lon=%.6f,alt=%.2f,utc=%02d:%02d:%04.1f", latitude,
-                 longitude, altitude, hour, minute, second);
-    } else {
-        snprintf(gps_formatted, sizeof(gps_formatted), "lat=%.6f,lon=%.6f,alt=%.0f,utc=%02d:%02d:%04.1f (invalid)",
-                 latitude, longitude, altitude, hour, minute, second);
-    }
-    return gps_formatted;
-}
+struct sensor neo_m8 = {
+    .init = neo_m8_init,
+    .read = neo_m8_read,
+    .on_receive = neo_m8_on_receive,
+};

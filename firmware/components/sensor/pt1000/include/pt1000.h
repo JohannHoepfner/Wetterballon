@@ -11,4 +11,4 @@ esp_err_t pt1000_init(void);
 char *pt1000_read(void);
 char *pt1000_format(double differential_voltage, double a3_voltage);
 
-extern Sensor pt1000;
+extern struct sensor pt1000;

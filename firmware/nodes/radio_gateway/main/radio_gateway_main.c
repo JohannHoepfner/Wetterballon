@@ -26,7 +26,7 @@ static const char *TAG = "node/radio_gateway";
 struct intercom *intercom = &radio;
 static struct store *store = &mock_store;
 StatusIndicator *status_indicator = &esp_led;
-Sensor *sensor_gps = &neo_m8;
+struct sensor *sensor_gps = &neo_m8;
 
 #define TELEMETRY_BODY_SIZE 256
 typedef struct {

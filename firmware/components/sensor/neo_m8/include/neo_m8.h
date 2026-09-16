@@ -5,9 +5,4 @@
 #include <esp_err.h>
 #include <stdbool.h>
 
-esp_err_t neo_m8_on_receive(sensor_callback_t callback);
-esp_err_t neo_m8_init(void);
-char *neo_m8_read(void);
-char *gps_format(double latitude, double longitude, double altitude, int hour, int minute, float second, bool valid);
-
-extern Sensor neo_m8;
+extern struct sensor neo_m8;

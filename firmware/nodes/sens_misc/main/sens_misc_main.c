@@ -23,7 +23,7 @@ static struct store_sd_card store_sd_card;
 static struct store *store;
 
 StatusIndicator *status_indicator = &esp_led;
-Sensor *sensor_pt1000 = &pt1000;
+struct sensor *sensor_pt1000 = &pt1000;
 
 static void
 on_databus_data(struct databus_message *message) {

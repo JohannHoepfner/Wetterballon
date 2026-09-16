@@ -8,4 +8,4 @@ esp_err_t mock_init(void);
 char *mock_read(void);
 char *mock_format(double value);
 
-extern Sensor mock;
+extern struct sensor mock;

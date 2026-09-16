@@ -24,8 +24,8 @@ static struct store_sd_card store_sd_card;
 static struct store *store;
 
 StatusIndicator *status_indicator = &esp_led;
-Sensor *sensor_geiger = &geiger;
-Sensor *sensor_bme280 = &bme280_s;
+struct sensor *sensor_geiger = &geiger;
+struct sensor *sensor_bme280 = &bme280_s;
 
 static void
 on_databus_data(struct databus_message *message) {

@@ -7,4 +7,4 @@
 esp_err_t bme280_init(void);
 char *bme280_read(void);
 
-extern Sensor bme280_s;
+extern struct sensor bme280_s;

@@ -9,7 +9,7 @@ static const char *TAG = "sensor/mock";
 
 static char mock_formatted[32];
 
-Sensor mock = {
+struct sensor mock = {
     .init = mock_init,
     .read = mock_read,
 };
