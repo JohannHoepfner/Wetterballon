@@ -9,19 +9,14 @@ static const char *TAG = "sensor/mock";
 
 static char mock_formatted[32];
 
-struct sensor mock = {
-    .init = mock_init,
-    .read = mock_read,
-};
-
-esp_err_t
+static esp_err_t
 mock_init(void) {
     ESP_LOGI(TAG, "Mock sensor initialized");
 
     return ESP_OK;
 }
 
-char *
+static char *
 mock_read(void) {
     double value = ((double)esp_random() / UINT32_MAX) * 100.0;
 
@@ -31,10 +26,15 @@ mock_read(void) {
     return mock_formatted;
 }
 
-char *
+static char *
 mock_format(double value) {
     static char formatted[32];
 
     snprintf(formatted, sizeof(formatted), "m=%.2f", value);
     return formatted;
 }
+
+struct sensor mock = {
+    .init = mock_init,
+    .read = mock_read,
+};

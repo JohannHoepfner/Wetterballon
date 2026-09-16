@@ -12,12 +12,7 @@ ads1115_t ads; // 0-1 PT1000 | 3 PT1000 (more accurate)
 static const char *TAG = "sensor/pt1000";
 static char formatted_voltage[48];
 
-struct sensor pt1000 = {
-    .init = pt1000_init,
-    .read = pt1000_read,
-};
-
-esp_err_t
+static esp_err_t
 init_ads(void) {
     i2c_master_bus_config_t config = {
         .sda_io_num = CONFIG_PT1000_I2C_SDA_PIN,
@@ -48,7 +43,7 @@ init_ads(void) {
     return ESP_OK;
 }
 
-double
+static double
 get_voltage(ads1115_t *ads, ads1115_mux_t mux, ads1115_fsr_t fsr) {
     ads1115_set_mux(ads, mux);
     ads1115_set_pga(ads, fsr);
@@ -56,7 +51,7 @@ get_voltage(ads1115_t *ads, ads1115_mux_t mux, ads1115_fsr_t fsr) {
     return volt;
 }
 
-esp_err_t
+static esp_err_t
 pt1000_init(void) {
     esp_err_t err = init_ads();
     if (err != ESP_OK) {
@@ -68,17 +63,7 @@ pt1000_init(void) {
     return ESP_OK;
 }
 
-char *
-pt1000_read(void) {
-    double differential_voltage = get_voltage(&ads, ADS1115_MUX_0_1, ADS1115_FSR_6_144);
-    double a3_voltage = get_voltage(&ads, ADS1115_MUX_3_GND, ADS1115_FSR_6_144);
-
-    // ESP_LOGI(TAG, "A0-A1 voltage: %.4f V, A3 voltage: %.4f V", differential_voltage, a3_voltage);
-
-    return pt1000_format(differential_voltage, a3_voltage);
-}
-
-double
+static double
 volt_to_temp(double volt) {
     // Formel mittels Regression aus den Messwerten
     double a = 12.8283;
@@ -90,9 +75,24 @@ volt_to_temp(double volt) {
     return a * volt * volt + b * volt + c - offset;
 }
 
-char *
+static char *
 pt1000_format(double differential_voltage, double a3_voltage) {
     snprintf(formatted_voltage, sizeof(formatted_voltage), "a0-a1=%.4f,a3=%.4f,t1=%.4f", differential_voltage,
              a3_voltage, volt_to_temp(a3_voltage));
     return formatted_voltage;
 }
+
+static char *
+pt1000_read(void) {
+    double differential_voltage = get_voltage(&ads, ADS1115_MUX_0_1, ADS1115_FSR_6_144);
+    double a3_voltage = get_voltage(&ads, ADS1115_MUX_3_GND, ADS1115_FSR_6_144);
+
+    // ESP_LOGI(TAG, "A0-A1 voltage: %.4f V, A3 voltage: %.4f V", differential_voltage, a3_voltage);
+
+    return pt1000_format(differential_voltage, a3_voltage);
+}
+
+struct sensor pt1000 = {
+    .init = pt1000_init,
+    .read = pt1000_read,
+};

@@ -20,12 +20,7 @@ static i2c_bus_handle_t i2c_bus;
 static bme280_handle_t sensor;
 static char formatted_reading[64];
 
-struct sensor bme280_s = {
-    .init = bme280_init,
-    .read = bme280_read,
-};
-
-esp_err_t
+static esp_err_t
 bme280_init(void) {
     i2c_config_t config = {
         .mode = I2C_MODE_MASTER,
@@ -57,7 +52,7 @@ bme280_init(void) {
     return ESP_OK;
 }
 
-char *
+static char *
 bme280_read(void) {
     float temperature = 0.0F;
     float pressure = 0.0F;
@@ -73,3 +68,8 @@ bme280_read(void) {
 
     return formatted_reading;
 }
+
+struct sensor bme280_s = {
+    .init = bme280_init,
+    .read = bme280_read,
+};
