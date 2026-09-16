@@ -2,12 +2,20 @@
 
 #include "../../store.h"
 
-#include "esp_err.h"
+#include "sd_protocol_types.h"
+#include <driver/gpio.h>
 
-esp_err_t sd_card_reinit(void);
-esp_err_t sd_card_init(void);
-esp_err_t sd_card_deinit(void);
-esp_err_t sd_card_write_data(time_t time, char *msg_str);
-esp_err_t sd_card_read_lines(size_t max_lines, char *buffer, size_t buffer_size, size_t *lines_read);
+struct store_sd_card_cfg {
+    gpio_num_t pin_mosi;
+    gpio_num_t pin_miso;
+    gpio_num_t pin_clk;
+    gpio_num_t pin_cs;
+};
 
-extern Store sd_card;
+struct store_sd_card {
+    struct store base;
+    struct store_sd_card_cfg cfg;
+    sdmmc_card_t *card;
+};
+
+void sd_card_store_create(struct store_sd_card *out, const struct store_sd_card_cfg *config);

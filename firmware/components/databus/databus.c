@@ -98,18 +98,13 @@ esp_err_t databus_init(uint8_t id) {
 
     ESP_ERROR_CHECK(esp_now_init());
     ESP_ERROR_CHECK(esp_now_register_recv_cb(_databus_espnow_recv_cb));
-    esp_now_peer_info_t *peer = malloc(sizeof(esp_now_peer_info_t));
-    if (peer == NULL) {
-        ESP_LOGE(TAG, "Malloc peer information fail");
-        esp_now_deinit();
-        return ESP_FAIL;
-    }
-    peer->channel = CONFIG_DATABUS_WIFI_CHANNEL;
-    peer->ifidx = ESP_IF_WIFI_STA;
-    peer->encrypt = false;
-    memcpy(peer->peer_addr, broadcast_mac, ESP_NOW_ETH_ALEN);
-    ESP_ERROR_CHECK(esp_now_add_peer(peer));
-    free(peer);
+    esp_now_peer_info_t peer = {
+        .channel = CONFIG_DATABUS_WIFI_CHANNEL,
+        .ifidx = WIFI_IF_STA,
+        .encrypt = false,
+    };
+    memcpy(peer.peer_addr, broadcast_mac, ESP_NOW_ETH_ALEN);
+    ESP_ERROR_CHECK(esp_now_add_peer(&peer));
 
     node_id = id;
     ESP_LOGI(TAG, "STATUS_INDICATOR_INITIALIZING databus with node ID: %llu", (unsigned long long)id);

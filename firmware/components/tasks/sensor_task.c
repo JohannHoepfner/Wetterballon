@@ -75,7 +75,9 @@ void sensor_task(void *arg) {
 
         xSemaphoreTake(context->sensor_output_mutex, portMAX_DELAY);
 
-        esp_err_t store_err = context->store->save(now, sensor_value);
+        struct store *store = context->store;
+
+        esp_err_t store_err = store->save(store, now, sensor_value);
         if (store_err != ESP_OK) {
             save_fail_count++;
             ESP_LOGE(TAG, "Sensor '%s': Failed to save data to store: %s (0x%x)", context->schedule->name,
@@ -103,7 +105,7 @@ void sensor_task(void *arg) {
 
         if (save_fail_count > reset_save_fail_count) {
             ESP_LOGW(TAG, "Sensor '%s': Too many save failures, reinitializing store", context->schedule->name);
-            context->store->reinit();
+            store->reinit(store);
             save_fail_count = 0;
             reset_save_fail_count += 2 * reset_save_fail_count;
         } else if (send_fail_count > reset_send_fail_count) {
@@ -119,7 +121,7 @@ void sensor_task(void *arg) {
 }
 
 esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
-                             Store *store, StatusIndicator *status_indicator) {
+                             struct store *store, StatusIndicator *status_indicator) {
     SemaphoreHandle_t sensor_output_mutex = xSemaphoreCreateMutex();
     if (sensor_output_mutex == NULL) {
         ESP_LOGE(TAG, "Failed to create sensor output mutex");

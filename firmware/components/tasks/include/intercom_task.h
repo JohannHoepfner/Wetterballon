@@ -36,7 +36,7 @@ typedef struct {
     union {
         IntercomTaskStatus *status;
         struct {
-            Store *store;
+            struct store *store;
             size_t lines_per_send;
         } source_store;
         struct {

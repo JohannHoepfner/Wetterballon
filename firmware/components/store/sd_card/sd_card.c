@@ -12,22 +12,9 @@
 
 static const char *TAG = "store/sd_card";
 
-Store sd_card = {
-    .init = sd_card_init,
-    .reinit = sd_card_reinit,
-    .deinit = sd_card_deinit,
-    .save = sd_card_write_data,
-    .read_lines = sd_card_read_lines,
-};
+static esp_err_t sd_card_init(struct store *base) {
+    struct store_sd_card *self = __containerof(base, struct store_sd_card, base);
 
-sdmmc_card_t *card;
-
-esp_err_t sd_card_reinit(void) {
-    sd_card_deinit();
-    return sd_card_init();
-}
-
-esp_err_t sd_card_init(void) {
     esp_err_t init_err;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -39,9 +26,9 @@ esp_err_t sd_card_init(void) {
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 
     spi_bus_config_t bus_cfg = {
-        .mosi_io_num = CONFIG_SD_CARD_PIN_MOSI,
-        .miso_io_num = CONFIG_SD_CARD_PIN_MISO,
-        .sclk_io_num = CONFIG_SD_CARD_PIN_CLK,
+        .mosi_io_num = self->cfg.pin_mosi,
+        .miso_io_num = self->cfg.pin_miso,
+        .sclk_io_num = self->cfg.pin_clk,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
@@ -54,11 +41,11 @@ esp_err_t sd_card_init(void) {
     }
 
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    slot_config.gpio_cs = CONFIG_SD_CARD_PIN_CS;
+    slot_config.gpio_cs = self->cfg.pin_cs;
     slot_config.host_id = host.slot;
 
     ESP_LOGI(TAG, "Mounting filesystem");
-    init_err = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
+    init_err = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &self->card);
 
     if (init_err != ESP_OK) {
         if (init_err == ESP_FAIL) {
@@ -80,9 +67,12 @@ esp_err_t sd_card_init(void) {
     return ESP_OK;
 }
 
-esp_err_t sd_card_deinit() {
+static esp_err_t sd_card_deinit(struct store *base) {
+    struct store_sd_card *self = __containerof(base, struct store_sd_card, base);
+
+    sdmmc_card_t *card = self->card;
+    self->card = NULL;
     esp_vfs_fat_sdcard_unmount(CONFIG_SD_CARD_MOUNT_POINT, card);
-    card = NULL;
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     esp_err_t err = spi_bus_free(host.slot);
@@ -95,8 +85,13 @@ esp_err_t sd_card_deinit() {
     return ESP_OK;
 }
 
+static esp_err_t sd_card_reinit(struct store *base) {
+    sd_card_deinit(base);
+    return sd_card_init(base);
+}
+
 const char *data_file_path = CONFIG_SD_CARD_MOUNT_POINT "/data";
-esp_err_t sd_card_write_data(time_t time, char *msg_str) {
+static esp_err_t sd_card_write_data(struct store *, time_t time, const char *msg_str) {
     FILE *data_file = fopen(data_file_path, "a");
     if (data_file == NULL) {
         ESP_LOGE(TAG, "Failed to open file for writing");
@@ -119,7 +114,8 @@ esp_err_t sd_card_write_data(time_t time, char *msg_str) {
     return ESP_OK;
 }
 
-esp_err_t sd_card_read_lines(size_t max_lines, char *buffer, size_t buffer_size, size_t *lines_read) {
+static esp_err_t sd_card_read_lines(struct store *, size_t max_lines, char *buffer, size_t buffer_size,
+                                    size_t *lines_read) {
     size_t previous_lines_read = *lines_read;
     FILE *data_file = fopen(data_file_path, "r");
     if (data_file == NULL) {
@@ -159,4 +155,18 @@ esp_err_t sd_card_read_lines(size_t max_lines, char *buffer, size_t buffer_size,
     ESP_LOGI(TAG, "Read until line %zu from SD card, total bytes read: %zu", *lines_read, total_bytes_read);
 
     return ESP_OK;
+}
+
+void sd_card_store_create(struct store_sd_card *out, const struct store_sd_card_cfg *config) {
+    *out = (struct store_sd_card){
+        .base =
+            {
+                .init = sd_card_init,
+                .reinit = sd_card_reinit,
+                .deinit = sd_card_deinit,
+                .save = sd_card_write_data,
+                .read_lines = sd_card_read_lines,
+            },
+        .cfg = *config,
+    };
 }

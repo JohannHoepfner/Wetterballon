@@ -61,7 +61,7 @@ void intercom_task(void *arg) {
             context->body[body_len] = '\0';
             xSemaphoreGive(context->source.status->mutex);
         } else if (context->mode == INTERCOM_TASK_MODE_READ_FROM_STORE) {
-            Store *store = context->source.source_store.store;
+            struct store *store = context->source.source_store.store;
 
             if (store == NULL || store->read_lines == NULL) {
                 ESP_LOGE(TAG, "Invalid intercom SD-card context");
@@ -73,8 +73,8 @@ void intercom_task(void *arg) {
             ESP_LOGI(TAG, "Reading %zu lines from SD card for intercom send",
                      context->source.source_store.lines_per_send);
             xSemaphoreTake(context->source.status->mutex, portMAX_DELAY);
-            read_err = store->read_lines(context->source.source_store.lines_per_send, context->body, context->body_size,
-                                         &lines_read);
+            read_err = store->read_lines(store, context->source.source_store.lines_per_send, context->body,
+                                         context->body_size, &lines_read);
             body_len = strnlen(context->body, context->body_size);
             xSemaphoreGive(context->source.status->mutex);
         } else if (context->mode == INTERCOM_TASK_MODE_TEXT) {

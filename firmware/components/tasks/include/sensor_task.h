@@ -17,10 +17,10 @@ typedef struct {
 
 typedef struct {
     const SensorSchedule *schedule;
-    Store *store;
+    struct store *store;
     SemaphoreHandle_t sensor_output_mutex;
 } SensorTaskContext;
 
 void sensor_task(void *arg);
 esp_err_t start_sensor_tasks(SensorSchedule *schedules, SensorTaskContext *contexts, size_t schedule_count,
-                             Store *store, StatusIndicator *status_indicator);
+                             struct store *store, StatusIndicator *status_indicator);

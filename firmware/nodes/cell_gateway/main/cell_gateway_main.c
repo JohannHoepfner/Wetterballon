@@ -19,7 +19,8 @@
 static const char *TAG = "node/cell_gateway";
 
 Intercom *intercom = &sim_modem;
-Store *store = &sd_card;
+static struct store_sd_card store_sd_card;
+static struct store *store;
 StatusIndicator *status_indicator = &esp_led;
 
 #define TELEMETRY_BODY_SIZE (64 * 1024)
@@ -39,7 +40,7 @@ static void on_databus_data(struct databus_message *message) {
     time_t send_time = message->send_time;
     char *msg_str = message->DATA_content.message;
 
-    esp_err_t err = store->save(send_time, msg_str);
+    esp_err_t err = store->save(store, send_time, msg_str);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
     }
@@ -59,13 +60,22 @@ void app_main(void) {
 
     // Initialize central adapters
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
-    esp_err_t store_init_err = store->init();
+
+    sd_card_store_create(&store_sd_card, &(struct store_sd_card_cfg){
+                                             .pin_mosi = GPIO_NUM_5,
+                                             .pin_miso = GPIO_NUM_4,
+                                             .pin_clk = GPIO_NUM_6,
+                                             .pin_cs = GPIO_NUM_0,
+                                         });
+    store = &store_sd_card.base;
+
+    esp_err_t store_init_err = store->init(store);
     if (store_init_err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize store: %s (0x%x)", esp_err_to_name(store_init_err), store_init_err);
         status_indicator->set_status(status_indicator, STATUS_INDICATOR_SD_CARD_ERROR);
         ESP_LOGW(TAG, "Continuing without store functionality (using mock store)");
         store = &mock_store;
-        ESP_ERROR_CHECK(store->init());
+        ESP_ERROR_CHECK(store->init(store));
     }
 
     // Initialize sim_modem (intercom)
@@ -100,7 +110,4 @@ void app_main(void) {
         status_indicator->set_status(status_indicator, STATUS_INDICATOR_SENSOR_ERROR);
         return;
     }
-
-    // Initialize sensor tasks
-    // -
 }

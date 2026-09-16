@@ -24,7 +24,7 @@
 static const char *TAG = "node/radio_gateway";
 
 Intercom *intercom = &radio;
-Store *store = &mock_store;
+static struct store *store = &mock_store;
 StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_gps = &neo_m8;
 
@@ -140,7 +140,7 @@ static void on_databus_data(struct databus_message *message) {
     if (store != NULL) {
         time_t send_time = message->send_time;
         char *msg_str = message->DATA_content.message;
-        esp_err_t err = store->save(send_time, msg_str);
+        esp_err_t err = store->save(store, send_time, msg_str);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to save data to store: %s (0x%x)", esp_err_to_name(err), err);
         }
@@ -202,7 +202,7 @@ void app_main(void) {
 
     // Initialize central adapters
     ESP_ERROR_CHECK(status_indicator->init(status_indicator));
-    ESP_ERROR_CHECK(store->init());
+    ESP_ERROR_CHECK(store->init(store));
 
     // Initialize radio
     ESP_ERROR_CHECK(intercom->init());
