@@ -1,4 +1,0 @@
-dependencies:
-  idf: ">=5.4.0"
-  johannh/databus:
-    override_path: "../../components/databus/"
