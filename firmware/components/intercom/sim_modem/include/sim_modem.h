@@ -14,4 +14,4 @@ esp_err_t sim_modem_deinit(void);
  * socket (no relay, no auth, no TLS). Redials the PPP link first if it dropped. */
 esp_err_t sim_modem_send_msg(char *buf, size_t buflen);
 
-extern Intercom sim_modem;
+extern struct intercom sim_modem;

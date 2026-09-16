@@ -18,7 +18,7 @@
 
 static const char *TAG = "intercom/radio";
 
-Intercom radio = {
+struct intercom radio = {
     .init = radio_init,
     .deinit = radio_deinit,
     .send = radio_send_msg,

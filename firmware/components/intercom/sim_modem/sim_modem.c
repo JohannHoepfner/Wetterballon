@@ -25,7 +25,7 @@
 
 static const char *TAG = "intercom/sim_modem";
 
-Intercom sim_modem = {
+struct intercom sim_modem = {
     .init = sim_modem_init,
     .deinit = sim_modem_deinit,
     .send = sim_modem_send_msg,

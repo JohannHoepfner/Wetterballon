@@ -29,7 +29,7 @@ typedef struct {
 
 typedef struct {
     IntercomTaskMode mode;
-    Intercom *intercom;
+    struct intercom *intercom;
     char *body;
     size_t body_size;
     SemaphoreHandle_t send_mutex;

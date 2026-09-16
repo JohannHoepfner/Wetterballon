@@ -23,7 +23,7 @@
 
 static const char *TAG = "node/radio_gateway";
 
-Intercom *intercom = &radio;
+struct intercom *intercom = &radio;
 static struct store *store = &mock_store;
 StatusIndicator *status_indicator = &esp_led;
 Sensor *sensor_gps = &neo_m8;

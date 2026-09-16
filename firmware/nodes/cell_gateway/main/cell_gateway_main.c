@@ -18,7 +18,7 @@
 
 static const char *TAG = "node/cell_gateway";
 
-Intercom *intercom = &sim_modem;
+struct intercom *intercom = &sim_modem;
 static struct store_sd_card store_sd_card;
 static struct store *store;
 StatusIndicator *status_indicator = &esp_led;
