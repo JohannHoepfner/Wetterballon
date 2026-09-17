@@ -23,7 +23,7 @@
 
 static const char *TAG = "node/radio_gateway";
 
-struct intercom *intercom = &radio;
+struct intercom *const intercom = &radio;
 static struct store *store = &mock_store;
 struct status_indicator *const status_indicator = &esp_led;
 
@@ -178,10 +178,39 @@ on_databus_data(struct databus_message *message) {
     return;
 }
 
-static IntercomTaskContext intercom_context_telemetry;
-static IntercomTaskContext intercom_context_explanation;
-static IntercomTaskContext intercom_context_greet_emil;
-static SemaphoreHandle_t s_intercom_send_mutex;
+static SemaphoreHandle_t intercom_send_mutex;
+static IntercomTaskContext intercom_context_telemetry = {
+    .mode = INTERCOM_TASK_MODE_TELEMETRY,
+    .intercom = intercom,
+    .body = s_telemetry_body,
+    .body_size = sizeof(s_telemetry_body),
+    .source.status = &s_telemetry_status,
+    .send_interval = pdMS_TO_TICKS(60000),
+    .status_indicator = status_indicator,
+};
+
+static char explanation_message[] =
+    "FORMAT IS TIME KOORD-LAT,KOORD-LONG,TEMP CRC. MORE AT DA0FRA.ALTAFRANER.DE. PRPT VIA EMAIL WELCOME";
+static IntercomTaskContext intercom_context_explanation = {
+    .mode = INTERCOM_TASK_MODE_TEXT,
+    .intercom = intercom,
+    .body = s_explanation_body,
+    .body_size = sizeof(s_explanation_body),
+    .source.source_text.text = explanation_message,
+    .send_interval = pdMS_TO_TICKS(300000),
+    .status_indicator = status_indicator,
+};
+
+static char greet_emil_message[] = "GREETINGS TO DO1ESL";
+static IntercomTaskContext intercom_context_greet_emil = {
+    .mode = INTERCOM_TASK_MODE_TEXT,
+    .intercom = intercom,
+    .body = s_greet_emil_body,
+    .body_size = sizeof(s_greet_emil_body),
+    .source.source_text.text = greet_emil_message,
+    .send_interval = pdMS_TO_TICKS(600000),
+    .status_indicator = status_indicator,
+};
 
 static void
 on_databus_kill_radio(struct databus_message *message) {
@@ -215,8 +244,7 @@ app_main(void) {
     // Initialize radio
     ESP_ERROR_CHECK(intercom->init());
 
-    s_intercom_send_mutex = xSemaphoreCreateMutex();
-    if (s_intercom_send_mutex == NULL) {
+    if (intercom_send_mutex == NULL) {
         ESP_LOGE(TAG, "Failed to create intercom send mutex");
         return;
     }
@@ -249,15 +277,10 @@ app_main(void) {
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_DATA, on_databus_data));
     ESP_ERROR_CHECK(databus.on_receive(DATABUS_MSG_TYPE_KILL_RADIO, on_databus_kill_radio));
 
-    // Set up intercom task to send last telemetry status periodically via intercom
-    intercom_context_telemetry.mode = INTERCOM_TASK_MODE_TELEMETRY;
-    intercom_context_telemetry.intercom = intercom;
-    intercom_context_telemetry.body = s_telemetry_body;
-    intercom_context_telemetry.body_size = sizeof(s_telemetry_body);
-    intercom_context_telemetry.send_mutex = s_intercom_send_mutex;
-    intercom_context_telemetry.source.status = &s_telemetry_status;
-    intercom_context_telemetry.send_interval = pdMS_TO_TICKS(60000); // Send every 60 seconds
-    intercom_context_telemetry.status_indicator = status_indicator;
+    intercom_context_telemetry.send_mutex = intercom_send_mutex;
+    intercom_context_explanation.send_mutex = intercom_send_mutex;
+    intercom_context_greet_emil.send_mutex = intercom_send_mutex;
+
     BaseType_t intercom_task_created =
         xTaskCreate(intercom_task, "radio_send_telemetry", 4096, &intercom_context_telemetry, 5, NULL);
     if (intercom_task_created != pdPASS) {
@@ -266,17 +289,6 @@ app_main(void) {
         return;
     }
 
-    // Set up intercom task to send explanation message periodically via intercom
-    char *explanation_message =
-        "FORMAT IS TIME KOORD-LAT,KOORD-LONG,TEMP CRC. MORE AT DA0FRA.ALTAFRANER.DE. PRPT VIA EMAIL WELCOME";
-    intercom_context_explanation.mode = INTERCOM_TASK_MODE_TEXT;
-    intercom_context_explanation.intercom = intercom;
-    intercom_context_explanation.body = s_explanation_body;
-    intercom_context_explanation.body_size = sizeof(s_explanation_body);
-    intercom_context_explanation.send_mutex = s_intercom_send_mutex;
-    intercom_context_explanation.source.source_text.text = explanation_message;
-    intercom_context_explanation.send_interval = pdMS_TO_TICKS(300000); // Send every 5 minutes
-    intercom_context_explanation.status_indicator = status_indicator;
     BaseType_t intercom_explanation_task_created =
         xTaskCreate(intercom_task, "radio_send_explanation", 4096, &intercom_context_explanation, 5, NULL);
     if (intercom_explanation_task_created != pdPASS) {
@@ -285,16 +297,6 @@ app_main(void) {
         return;
     }
 
-    // Set up intercom task to send greeting message periodically via intercom
-    char *greet_emil_message = "GREETINGS TO DO1ESL";
-    intercom_context_greet_emil.mode = INTERCOM_TASK_MODE_TEXT;
-    intercom_context_greet_emil.intercom = intercom;
-    intercom_context_greet_emil.body = s_greet_emil_body;
-    intercom_context_greet_emil.body_size = sizeof(s_greet_emil_body);
-    intercom_context_greet_emil.send_mutex = s_intercom_send_mutex;
-    intercom_context_greet_emil.source.source_text.text = greet_emil_message;
-    intercom_context_greet_emil.send_interval = pdMS_TO_TICKS(600000); // Send every 10 minutes
-    intercom_context_greet_emil.status_indicator = status_indicator;
     BaseType_t intercom_greet_emil_task_created =
         xTaskCreate(intercom_task, "radio_send_greet_emil", 4096, &intercom_context_greet_emil, 5, NULL);
     if (intercom_greet_emil_task_created != pdPASS) {
