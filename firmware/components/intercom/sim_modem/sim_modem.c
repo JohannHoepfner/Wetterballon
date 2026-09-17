@@ -216,14 +216,6 @@ send_email_once(const char *body, size_t body_len) {
         goto out;
     }
 
-    ESP_LOGE(TAG, "size: %d", server_max);
-    if (server_max == 99999) {
-        struct databus_message msg = {
-            .type = DATABUS_MSG_TYPE_KILL_RADIO,
-        };
-        databus_send(&msg);
-    }
-
     if (smtp_send_raw(sock, headers, (size_t)hdr_len) != ESP_OK) {
         goto out;
     }
